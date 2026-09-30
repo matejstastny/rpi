@@ -92,7 +92,7 @@ func main() {
 	log.Print("shutting down")
 	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	srv.Shutdown(shutdown)
+	_ = srv.Shutdown(shutdown)
 }
 
 func loop(ctx context.Context, every time.Duration, fn func(context.Context)) {
@@ -140,7 +140,7 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	s.mu.RLock()
 	updated := s.updated
 	s.mu.RUnlock()
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "updated": updated})
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "updated": updated})
 }
 
 func (s *server) handleStats(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +158,7 @@ func (s *server) handleStats(w http.ResponseWriter, r *http.Request) {
 	resp.Fleet = summarise(resp.Hosts, resp.Services)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (s *server) refreshMetrics(ctx context.Context) {

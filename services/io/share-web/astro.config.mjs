@@ -10,7 +10,7 @@ export default defineConfig({
     server: { port: 4322 },
     vite: {
         server: {
-            proxy: { "/api": "http://127.0.0.1:8091", "/dl": "http://127.0.0.1:8091" },
-        },
-    },
+            proxy: { "/api": "http://127.0.0.1:8091", "/dl": "http://127.0.0.1:8091" }
+        }
+    }
 });

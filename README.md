@@ -31,3 +31,16 @@
 | DONE `transmission-daemon`       | torrent client at `torrent.elara.boo`, `script-torrent-done` hardlinks finished video into jellyfin's library |
 | DONE `prometheus-node-exporter`  | metrics scrape target for io itself, scraped over loopback                                                    |
 | DONE `victoria-metrics` + `dash` | custom go+astro fleet dashboard at `dash.elara.boo`                                                           |
+
+## development
+
+[mise](https://mise.jdx.dev/) installs and selects this repository's Go, Node,
+pnpm, and Go linter versions. Install mise once, then run:
+
+```sh
+mise install
+mise run check
+```
+
+`mise run check` verifies formatting, shell syntax, Astro typechecking and
+builds, Go linting, `go vet`, and Go tests.

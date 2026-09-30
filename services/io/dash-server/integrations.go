@@ -138,7 +138,7 @@ func (c *collector) getJSON(ctx context.Context, url string, basicUser, basicPas
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("%s answered %s", url, res.Status)
 	}
@@ -384,7 +384,7 @@ func (c *collector) rpc(ctx context.Context, body string, into any) error {
 	// and replay once
 	if res.StatusCode == http.StatusConflict {
 		session = res.Header.Get("X-Transmission-Session-Id")
-		res.Body.Close()
+		_ = res.Body.Close()
 		c.mu.Lock()
 		c.txSession = session
 		c.mu.Unlock()
@@ -392,7 +392,7 @@ func (c *collector) rpc(ctx context.Context, body string, into any) error {
 			return err
 		}
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("transmission answered %s", res.Status)
 	}
@@ -538,10 +538,10 @@ func (c *collector) victoria(ctx context.Context) (*victoriaInfo, error) {
 	if err != nil {
 		return info, nil
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
+	_, _ = buf.ReadFrom(res.Body)
 	for line := range strings.Lines(buf.String()) {
 		name, value, ok := promLine(line)
 		if !ok {

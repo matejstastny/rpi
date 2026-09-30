@@ -1,0 +1,38 @@
+#!/bin/sh
+#@ format, lint, typecheck, build, and test the repository
+
+set -eu
+
+self="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+cd "$self"
+
+go_files="$(git ls-files '*.go')"
+if [ -n "$go_files" ] && [ -n "$(gofmt -d $go_files)" ]; then
+	echo "Go files are not gofmt-formatted. Run: gofmt -w $go_files" >&2
+	exit 1
+fi
+
+for file in $(git ls-files 'bin/*' 'services/**/install' 'services/**/prepare' 'services/**/*.initd' 'hosts/*.zsh'); do
+	sh -n "$file"
+done
+
+for web in services/io/web services/io/share-web services/io/dash-web; do
+	echo "▸ $(basename "$web"): installing dependencies"
+	(
+		cd "$web"
+		pnpm install --frozen-lockfile --silent
+		pnpm format
+		pnpm typecheck
+		pnpm build
+	)
+done
+
+for server in services/io/server services/io/share-server services/io/dash-server; do
+	echo "▸ $(basename "$server"): checking Go"
+	(
+		cd "$server"
+		golangci-lint run ./...
+		go vet ./...
+		go test ./...
+	)
+done

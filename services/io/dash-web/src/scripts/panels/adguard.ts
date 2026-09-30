@@ -7,12 +7,12 @@ import { empty, figure, kv, kvGrid, panel } from "../ui";
 export function adguardPanel(
     info: AdGuardInfo | null,
     accent: string,
-    tailnetNames: Map<string, string>,
+    tailnetNames: Map<string, string>
 ): HTMLElement {
     if (!info) {
         return panel(
             { title: "adguard home", span: "span-adguard", accent },
-            empty("no answer from the resolver api"),
+            empty("no answer from the resolver api")
         );
     }
 
@@ -20,14 +20,20 @@ export function adguardPanel(
     const blockedHours = info.blockedHour ?? [];
 
     return panel(
-        { title: "adguard home", meta: info.version, span: "span-adguard", accent, link: "https://dns.elara.boo" },
+        {
+            title: "adguard home",
+            meta: info.version,
+            span: "span-adguard",
+            accent,
+            link: "https://dns.elara.boo"
+        },
         h(
             "div.figures",
             {},
             figure(count(info.queries), "queries 24h"),
             figure(count(info.blocked), "blocked"),
             figure(pct(info.blockedPct, 1), "block rate"),
-            figure(ms(info.avgMs), "avg answer"),
+            figure(ms(info.avgMs), "avg answer")
         ),
         h(
             "div.histogram",
@@ -36,23 +42,31 @@ export function adguardPanel(
                 "div.trace-head",
                 {},
                 h("span.micro-label", { text: "queries per hour" }),
-                h("span.trace-now", { text: `peak ${count(Math.max(0, ...hours))}` }),
+                h("span.trace-now", { text: `peak ${count(Math.max(0, ...hours))}` })
             ),
-            columns(hours, { title: (v, i) => `${hoursAgo(hours.length, i)}: ${count(v)} queries` }),
+            columns(hours, {
+                title: (v, i) => `${hoursAgo(hours.length, i)}: ${count(v)} queries`
+            }),
             h(
                 "div.trace-head",
                 {},
                 h("span.micro-label", { text: "blocked per hour" }),
-                h("span.trace-now", { text: `peak ${count(Math.max(0, ...blockedHours))}` }),
+                h("span.trace-now", { text: `peak ${count(Math.max(0, ...blockedHours))}` })
             ),
-            h("div.columns-blocked", {}, columns(blockedHours, { title: (v, i) => `${hoursAgo(blockedHours.length, i)}: ${count(v)} blocked` })),
+            h(
+                "div.columns-blocked",
+                {},
+                columns(blockedHours, {
+                    title: (v, i) => `${hoursAgo(blockedHours.length, i)}: ${count(v)} blocked`
+                })
+            )
         ),
         h(
             "div.tops",
             {},
             topList("most asked", info.topQueried),
             topList("most blocked", info.topBlocked),
-            topList("busiest clients", named(info.topClients, tailnetNames)),
+            topList("busiest clients", named(info.topClients, tailnetNames))
         ),
         kvGrid(
             kv("protection", info.protection ? "on" : "off", !info.protection),
@@ -60,8 +74,8 @@ export function adguardPanel(
             kv("upstream rtt", ms(info.upstreamMs)),
             kv("uptime", duration(info.uptimeSec)),
             kv("safe browsing", count(info.safebrowsing)),
-            kv("listening", (info.addresses ?? []).slice(0, 2).join(" · ") || "—"),
-        ),
+            kv("listening", (info.addresses ?? []).slice(0, 2).join(" · ") || "—")
+        )
     );
 }
 
@@ -83,7 +97,7 @@ function topList(title: string, rows: NameCount[] | null): HTMLElement {
         "div.top",
         {},
         h("span.micro-label", { text: title }),
-        rows && rows.length > 0 ? ranked(rows.slice(0, 6), count) : empty("nothing yet"),
+        rows && rows.length > 0 ? ranked(rows.slice(0, 6), count) : empty("nothing yet")
     );
 }
 

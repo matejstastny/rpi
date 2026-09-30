@@ -194,7 +194,7 @@ func (r *runner) run(ctx context.Context, j *job) {
 
 	meta, err := probe(ctx, r.cfg, j.req.URL)
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		j.publish(event{Stage: "error", Message: err.Error(), terminal: true})
 		return
 	}
@@ -202,14 +202,14 @@ func (r *runner) run(ctx context.Context, j *job) {
 	j.publish(event{Stage: "download", Label: "downloading"})
 
 	if err := r.fetch(ctx, j, dir); err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		j.publish(event{Stage: "error", Message: err.Error(), terminal: true})
 		return
 	}
 
 	e, err := r.finish(j, dir, meta)
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		j.publish(event{Stage: "error", Message: err.Error(), terminal: true})
 		return
 	}
@@ -256,7 +256,7 @@ func (r *runner) fetch(ctx context.Context, j *job, dir string) error {
 
 	go func() {
 		defer wg.Done()
-		io.Copy(tailWriter{&errTail}, stderr)
+		_, _ = io.Copy(tailWriter{&errTail}, stderr)
 	}()
 
 	wg.Wait()
@@ -522,7 +522,7 @@ func sweepSidecars(dir, keep string) {
 		if item.IsDir() || path == keep || item.Name() == "meta.json" {
 			continue
 		}
-		os.Remove(path)
+		_ = os.Remove(path)
 	}
 }
 

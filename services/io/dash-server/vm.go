@@ -98,7 +98,7 @@ func (c *vmClient) get(ctx context.Context, path string, query url.Values) (*pro
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	var out promResponse
 	if err := json.NewDecoder(res.Body).Decode(&out); err != nil {

@@ -70,7 +70,7 @@ export function probe(url: string, signal?: AbortSignal): Promise<ProbeResult> {
         method: "POST",
         headers: asJSON,
         body: JSON.stringify({ url }),
-        signal,
+        signal
     });
 }
 
@@ -78,7 +78,7 @@ export function createJob(job: JobRequest): Promise<{ id: string }> {
     return request<{ id: string }>("/api/jobs", {
         method: "POST",
         headers: asJSON,
-        body: JSON.stringify(job),
+        body: JSON.stringify(job)
     });
 }
 
@@ -125,7 +125,7 @@ export function ago(iso: string): string {
     const steps: [number, string][] = [
         [60, "m"],
         [3600, "h"],
-        [86400, "d"],
+        [86400, "d"]
     ];
     if (seconds < 3600) return `${Math.round(seconds / steps[0][0])}m ago`;
     if (seconds < 86400) return `${Math.round(seconds / steps[1][0])}h ago`;

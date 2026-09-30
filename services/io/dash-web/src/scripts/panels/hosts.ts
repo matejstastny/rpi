@@ -21,7 +21,7 @@ function hostCard(host: HostStats): HTMLElement {
             "article.host.host-offline",
             { style },
             header(host),
-            h("p.empty", { text: "no metrics in the last scrape window" }),
+            h("p.empty", { text: "no metrics in the last scrape window" })
         );
     }
 
@@ -37,21 +37,21 @@ function hostCard(host: HostStats): HTMLElement {
                 value: pct(host.cpuPct),
                 fill: host.cpuPct,
                 warn: host.cpuPct > WARN_CPU,
-                sub: `${host.cores} cores`,
+                sub: `${host.cores} cores`
             }),
             gauge({
                 label: "memory",
                 value: pct(host.memPct),
                 fill: host.memPct,
                 warn: host.memPct > WARN_MEM,
-                sub: `${bytes(host.memUsed)}/${bytes(host.memTotal)}`,
+                sub: `${bytes(host.memUsed)}/${bytes(host.memTotal)}`
             }),
             gauge({
                 label: "disk",
                 value: pct(host.diskPct),
                 fill: host.diskPct,
                 warn: host.diskPct > WARN_DISK,
-                sub: rootSub(host),
+                sub: rootSub(host)
             }),
             gauge({
                 label: "temp",
@@ -59,8 +59,8 @@ function hostCard(host: HostStats): HTMLElement {
                 // the pi throttles at 80, so the ring reads against that
                 fill: (host.tempC / 80) * 100,
                 warn: host.tempC > WARN_TEMP,
-                sub: `${host.freqMHz.toFixed(0)} MHz`,
-            }),
+                sub: `${host.freqMHz.toFixed(0)} MHz`
+            })
         ),
 
         h(
@@ -70,9 +70,9 @@ function hostCard(host: HostStats): HTMLElement {
             columns(host.corePct ?? [], {
                 max: 100,
                 warnAt: WARN_CPU,
-                title: (v, i) => `cpu${i} ${v.toFixed(1)}%`,
+                title: (v, i) => `cpu${i} ${v.toFixed(1)}%`
             }),
-            h("span.micro-note", { text: host.governor }),
+            h("span.micro-note", { text: host.governor })
         ),
 
         h(
@@ -81,27 +81,37 @@ function hostCard(host: HostStats): HTMLElement {
             trace("cpu", host.series.cpu, pct(host.cpuPct, 1)),
             trace("temp", host.series.temp, `${host.tempC.toFixed(1)}°`),
             trace("net in", host.series.netRx, rate(host.netRxBps)),
-            trace("net out", host.series.netTx, rate(host.netTxBps)),
+            trace("net out", host.series.netTx, rate(host.netTxBps))
         ),
 
         h("div.fs", {}, ...(host.filesystems ?? []).map(fsBar)),
 
         kvGrid(
-            kv("load", `${host.load1.toFixed(2)} ${host.load5.toFixed(2)} ${host.load15.toFixed(2)}`),
+            kv(
+                "load",
+                `${host.load1.toFixed(2)} ${host.load5.toFixed(2)} ${host.load15.toFixed(2)}`
+            ),
             kv("uptime", duration(host.uptimeSec)),
             kv("disk io", `↓${rate(host.diskReadBps)} ↑${rate(host.diskWriteBps)}`),
             kv("net total", `↓${bytes(host.netRxTotal)} ↑${bytes(host.netTxTotal)}`),
-            kv("procs", `${host.procsRunning.toFixed(0)} run · ${host.procsBlocked.toFixed(0)} blocked`, host.procsBlocked > 0),
+            kv(
+                "procs",
+                `${host.procsRunning.toFixed(0)} run · ${host.procsBlocked.toFixed(0)} blocked`,
+                host.procsBlocked > 0
+            ),
             kv("ctx switch", `${Math.round(host.ctxSwitches).toLocaleString("en-US")}/s`),
             kv("file desc", `${Math.round(host.fdUsed).toLocaleString("en-US")} open`),
             kv("conntrack", Math.round(host.conntrack).toLocaleString("en-US")),
-            kv("swap", host.swapTotal > 0 ? `${bytes(host.swapUsed)}/${bytes(host.swapTotal)}` : "none"),
+            kv(
+                "swap",
+                host.swapTotal > 0 ? `${bytes(host.swapUsed)}/${bytes(host.swapTotal)}` : "none"
+            ),
             kv("io wait", pct(host.ioWaitPct, 2), host.ioWaitPct > 10),
             kv("clock drift", ms(host.driftMs), Math.abs(host.driftMs) > 200),
             kv("scrape", ms(host.scrapeMs), host.scrapeMs > 1000),
             kv("net errors", Math.round(host.netErrs).toLocaleString("en-US"), host.netErrs > 0),
-            kv("oom kills", Math.round(host.oomKills).toLocaleString("en-US"), host.oomKills > 0),
-        ),
+            kv("oom kills", Math.round(host.oomKills).toLocaleString("en-US"), host.oomKills > 0)
+        )
     );
 }
 
@@ -115,7 +125,7 @@ function header(host: HostStats): HTMLElement {
             h("span.host-glyph", { text: host.glyph }),
             h("h2.host-name", { text: host.name }),
             h("span.host-role", { text: host.role }),
-            h("span.host-state", { "data-online": host.online ? "1" : "0" }),
+            h("span.host-state", { "data-online": host.online ? "1" : "0" })
         ),
         h("p.host-blurb", { text: host.blurb }),
         h(
@@ -125,13 +135,18 @@ function header(host: HostStats): HTMLElement {
             fact("lan", host.lan || "—"),
             fact("iface", host.netDevice || "—"),
             fact("kernel", host.kernel || "—"),
-            fact("board", `${host.model} · ${host.arch}`),
-        ),
+            fact("board", `${host.model} · ${host.arch}`)
+        )
     );
 }
 
 function fact(label: string, value: string): HTMLElement {
-    return h("span.fact", { title: `${label}: ${value}` }, h("i", { text: label }), h("b", { text: value }));
+    return h(
+        "span.fact",
+        { title: `${label}: ${value}` },
+        h("i", { text: label }),
+        h("b", { text: value })
+    );
 }
 
 function rootSub(host: HostStats): string {
@@ -139,12 +154,18 @@ function rootSub(host: HostStats): string {
     return root ? `${bytes(root.used)}/${bytes(root.size)}` : "—";
 }
 
-function fsBar(fs: { mount: string; used: number; size: number; pct: number; fstype: string }): HTMLElement {
+function fsBar(fs: {
+    mount: string;
+    used: number;
+    size: number;
+    pct: number;
+    fstype: string;
+}): HTMLElement {
     return bar(
         `${fs.mount} · ${fs.fstype}`,
         `${bytes(fs.used)} / ${bytes(fs.size)}`,
         fs.pct,
-        fs.pct > WARN_DISK,
+        fs.pct > WARN_DISK
     );
 }
 
@@ -152,7 +173,12 @@ function trace(label: string, values: number[] | undefined, now: string): HTMLEl
     return h(
         "div.trace",
         {},
-        h("div.trace-head", {}, h("span.micro-label", { text: label }), h("span.trace-now", { text: now })),
-        sparkline(values),
+        h(
+            "div.trace-head",
+            {},
+            h("span.micro-label", { text: label }),
+            h("span.trace-now", { text: now })
+        ),
+        sparkline(values)
     );
 }

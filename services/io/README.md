@@ -10,8 +10,16 @@ lan and tailnet.
 - `prepare` cross-builds the three go binaries for linux arm64.
 - `install` installs the staged service payload on io.
 
-develop a web app with `pnpm dev` in its `*-web` directory, and its api with
-`go run .` in the matching server directory. deploy from the repo root:
+after `mise install`, develop a web app with `pnpm dev` in its `*-web`
+directory. Build it once before starting the matching api, since the Go binary
+embeds the generated `dist/` directory:
+
+```sh
+cd services/io/web && pnpm build
+cd ../server && go run .
+```
+
+Run every repository check from the root with `mise run check`. Deploy with:
 
 ```sh
 bin/pi sync io --services

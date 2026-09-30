@@ -9,7 +9,7 @@ export default defineConfig({
     devToolbar: { enabled: false },
     vite: {
         server: {
-            proxy: { "/api": "http://127.0.0.1:8090" },
-        },
-    },
+            proxy: { "/api": "http://127.0.0.1:8090" }
+        }
+    }
 });

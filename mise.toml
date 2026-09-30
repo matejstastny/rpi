@@ -1,0 +1,9 @@
+[tools]
+go = "1.25"
+node = "22.23.1"
+pnpm = "11.9.0"
+golangci-lint = "2.11.3"
+
+[tasks.check]
+description = "Run all repository checks"
+run = "bin/check"

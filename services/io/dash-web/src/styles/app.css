@@ -65,8 +65,7 @@ body {
        a flat rectangle, without ever competing with the data */
     background:
         radial-gradient(1200px 520px at 12% -8%, #9b6bc914, transparent 70%),
-        radial-gradient(1000px 460px at 88% -4%, #5fb3a310, transparent 70%),
-        var(--base);
+        radial-gradient(1000px 460px at 88% -4%, #5fb3a310, transparent 70%), var(--base);
     background-attachment: fixed;
     color: var(--text);
     font-size: 13px;
@@ -331,7 +330,11 @@ a {
 
 .host {
     background:
-        linear-gradient(180deg, color-mix(in oklab, var(--accent) 7%, transparent), transparent 130px),
+        linear-gradient(
+            180deg,
+            color-mix(in oklab, var(--accent) 7%, transparent),
+            transparent 130px
+        ),
         var(--surface);
     border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--overlay));
     border-radius: var(--radius);
@@ -553,7 +556,11 @@ a {
 }
 
 .column-fill {
-    background: linear-gradient(180deg, var(--accent), color-mix(in oklab, var(--accent) 45%, transparent));
+    background: linear-gradient(
+        180deg,
+        var(--accent),
+        color-mix(in oklab, var(--accent) 45%, transparent)
+    );
     border-radius: 2px;
     display: block;
     transition: height 0.5s ease;
@@ -561,11 +568,19 @@ a {
 }
 
 .column[data-warn] .column-fill {
-    background: linear-gradient(180deg, var(--red), color-mix(in oklab, var(--red) 45%, transparent));
+    background: linear-gradient(
+        180deg,
+        var(--red),
+        color-mix(in oklab, var(--red) 45%, transparent)
+    );
 }
 
 .columns-blocked .column-fill {
-    background: linear-gradient(180deg, var(--rose), color-mix(in oklab, var(--rose) 40%, transparent));
+    background: linear-gradient(
+        180deg,
+        var(--rose),
+        color-mix(in oklab, var(--rose) 40%, transparent)
+    );
 }
 
 .histogram .columns {
@@ -1037,7 +1052,10 @@ a.service:hover .service-name {
     border-radius: 4px;
     display: grid;
     gap: 10px;
-    grid-template-columns: 8px minmax(110px, 1.4fr) 62px 128px minmax(150px, 1.2fr) minmax(110px, auto);
+    grid-template-columns: 8px minmax(110px, 1.4fr) 62px 128px minmax(150px, 1.2fr) minmax(
+            110px,
+            auto
+        );
     padding: 3px 6px;
 }
 

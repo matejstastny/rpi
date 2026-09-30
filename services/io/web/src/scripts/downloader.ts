@@ -8,7 +8,7 @@ import {
     rate,
     type FileEntry,
     type JobRequest,
-    type Update,
+    type Update
 } from "./api";
 
 const form = need<HTMLFormElement>("#grab");
@@ -51,7 +51,10 @@ function syncFormat(): void {
     heightRow.hidden = audio;
     bitrateRow.hidden = !audio;
     sponsorLabel.textContent = audio ? "cut sponsor segments" : "mark sponsor segments";
-    coverCheck.parentElement?.setAttribute("title", audio ? "cover art in the mp3 tags" : "cover art as the mp4 poster frame");
+    coverCheck.parentElement?.setAttribute(
+        "title",
+        audio ? "cover art in the mp3 tags" : "cover art as the mp4 poster frame"
+    );
 }
 
 // only offer resolutions the video actually has, tallest first, so a 240p
@@ -80,7 +83,9 @@ async function runProbe(url: string): Promise<void> {
         const found = await probe(url, probing.signal);
         metaTitle.textContent = found.title;
         metaBy.textContent = found.uploader ?? "unknown";
-        metaLength.textContent = [found.duration, found.source?.toLowerCase()].filter(Boolean).join(" · ");
+        metaLength.textContent = [found.duration, found.source?.toLowerCase()]
+            .filter(Boolean)
+            .join(" · ");
         metaBox.hidden = false;
         fillHeights(found.heights);
     } catch (error) {
@@ -109,7 +114,7 @@ function paint(update: Update): void {
         known ? `${update.percent.toFixed(0)}%` : "",
         rate(update.speed ?? 0),
         update.eta && update.eta > 0 ? `eta ${clock(update.eta)}` : "",
-        update.total ? bytes(update.total) : "",
+        update.total ? bytes(update.total) : ""
     ].filter(Boolean);
     nums.textContent = parts.join("   ");
 }
@@ -125,7 +130,12 @@ function pull(entry: FileEntry): void {
 }
 
 function landed(entry: FileEntry): void {
-    const where = entry.library && entry.cached ? "cached and filed into io's library" : entry.library ? "filed into io's library" : "in io's cache";
+    const where =
+        entry.library && entry.cached
+            ? "cached and filed into io's library"
+            : entry.library
+              ? "filed into io's library"
+              : "in io's cache";
     say(`${entry.name} · ${bytes(entry.size)} · ${where}`);
 
     actions.innerHTML = "";
@@ -207,7 +217,7 @@ form.addEventListener("submit", async (submitted: SubmitEvent) => {
         mode: modeSelect.value as JobRequest["mode"],
         metadata: need<HTMLInputElement>("#metadata").checked,
         thumbnail: coverCheck.checked,
-        sponsorblock: need<HTMLInputElement>("#sponsorblock").checked,
+        sponsorblock: need<HTMLInputElement>("#sponsorblock").checked
     };
 
     settled = false;

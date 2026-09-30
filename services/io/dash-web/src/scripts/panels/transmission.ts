@@ -6,7 +6,10 @@ import { empty, figure, kv, kvGrid, panel } from "../ui";
 
 export function transmissionPanel(info: TransmissionInfo | null, accent: string): HTMLElement {
     if (!info) {
-        return panel({ title: "transmission", span: "span-transmission", accent }, empty("no answer from the rpc"));
+        return panel(
+            { title: "transmission", span: "span-transmission", accent },
+            empty("no answer from the rpc")
+        );
     }
 
     const list = info.list ?? [];
@@ -17,7 +20,7 @@ export function transmissionPanel(info: TransmissionInfo | null, accent: string)
             meta: `${info.torrents} torrent${info.torrents === 1 ? "" : "s"}`,
             span: "span-transmission",
             accent,
-            link: "https://torrent.elara.boo",
+            link: "https://torrent.elara.boo"
         },
         h(
             "div.figures",
@@ -25,7 +28,7 @@ export function transmissionPanel(info: TransmissionInfo | null, accent: string)
             figure(rate(info.downBps), "down"),
             figure(rate(info.upBps), "up"),
             figure(info.ratio.toFixed(2), "all time ratio"),
-            figure(String(info.active), "active"),
+            figure(String(info.active), "active")
         ),
         list.length === 0
             ? empty("no torrents loaded")
@@ -34,8 +37,8 @@ export function transmissionPanel(info: TransmissionInfo | null, accent: string)
             kv("downloaded", bytes(info.downTotal)),
             kv("uploaded", bytes(info.upTotal)),
             kv("paused", String(info.paused)),
-            kv("time active", duration(info.activeSec)),
-        ),
+            kv("time active", duration(info.activeSec))
+        )
     );
 }
 
@@ -65,7 +68,7 @@ function torrentRow(t: {
             {},
             h("span", { text: `${t.percent.toFixed(1)}%` }),
             h("span", { text: `${t.peers} peers` }),
-            h("span", { text: eta }),
-        ),
+            h("span", { text: eta })
+        )
     );
 }

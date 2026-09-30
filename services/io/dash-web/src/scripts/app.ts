@@ -32,12 +32,13 @@ function render(data: StatsResponse): void {
 
     // every host has its own accent; the shared panels borrow the accent of
     // whichever box actually runs the thing they describe
-    const accentOf = (name: string) => hosts.find((host) => host.name === name)?.accent ?? "#9b6bc9";
+    const accentOf = (name: string) =>
+        hosts.find((host) => host.name === name)?.accent ?? "#9b6bc9";
 
     // adguard reports its clients by ip, and most of them are tailnet nodes
     // tailscale can name for us
     const tailnetNames = new Map(
-        (data.tailnet?.peers ?? []).filter((peer) => peer.ip).map((peer) => [peer.ip, peer.name]),
+        (data.tailnet?.peers ?? []).filter((peer) => peer.ip).map((peer) => [peer.ip, peer.name])
     );
 
     replace(fleetHost, fleetStrip(data.fleet));
@@ -53,10 +54,10 @@ function render(data: StatsResponse): void {
             data.integrations.jellyfin,
             data.integrations.ytdl,
             data.integrations.share,
-            accentOf("io"),
+            accentOf("io")
         ),
         tailnetPanel(data.tailnet, accentOf("leda")),
-        storePanel(data.integrations.victoria, accentOf("io"), data.window),
+        storePanel(data.integrations.victoria, accentOf("io"), data.window)
     );
 }
 

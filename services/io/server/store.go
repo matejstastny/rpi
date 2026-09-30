@@ -103,14 +103,14 @@ func (s *store) load() error {
 		raw, err := os.ReadFile(filepath.Join(dir, "meta.json"))
 		if err != nil {
 			log.Printf("sweeping incomplete job dir %s", d.Name())
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 
 		var e entry
 		if err := json.Unmarshal(raw, &e); err != nil || e.ID != d.Name() {
 			log.Printf("sweeping unreadable job dir %s", d.Name())
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 
@@ -125,7 +125,7 @@ func (s *store) load() error {
 			}
 		}
 		if e.CachePath == "" && e.ArchivePath == "" {
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 
@@ -319,15 +319,15 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o664)
 	if err != nil {
 		return err
 	}
 	if _, err := io.Copy(out, in); err != nil {
-		out.Close()
-		os.Remove(dst)
+		_ = out.Close()
+		_ = os.Remove(dst)
 		return err
 	}
 	return out.Close()

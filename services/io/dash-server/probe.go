@@ -84,7 +84,7 @@ func (p *prober) probe(ctx context.Context, target string, into *serviceStatus) 
 			into.Note = shortErr(err)
 			return
 		}
-		conn.Close()
+		_ = conn.Close()
 		into.State = "up"
 		return
 	}
@@ -104,7 +104,7 @@ func (p *prober) probe(ctx context.Context, target string, into *serviceStatus) 
 		into.Note = shortErr(err)
 		return
 	}
-	res.Body.Close()
+	_ = res.Body.Close()
 
 	into.Code = res.StatusCode
 	// transmission answers 409 without a session id and adguard answers 401

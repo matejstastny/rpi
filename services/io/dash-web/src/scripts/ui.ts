@@ -12,20 +12,23 @@ export interface PanelOptions {
     link?: string;
 }
 
-export function panel({ title, meta, span, accent, link }: PanelOptions, ...body: Child[]): HTMLElement {
+export function panel(
+    { title, meta, span, accent, link }: PanelOptions,
+    ...body: Child[]
+): HTMLElement {
     const head = h(
         "header.panel-head",
         {},
         link
             ? h("a.panel-title", { href: link, target: "_blank", rel: "noreferrer", text: title })
             : h("h2.panel-title", { text: title }),
-        meta ? h("span.panel-meta", { text: meta }) : null,
+        meta ? h("span.panel-meta", { text: meta }) : null
     );
     return h(
         `section.panel${span ? `.${span}` : ""}`,
         { style: accent ? `--accent:${accent}` : undefined },
         head,
-        h("div.panel-body", {}, ...body),
+        h("div.panel-body", {}, ...body)
     );
 }
 
@@ -35,7 +38,9 @@ export function kv(label: string, value: Child, warn = false): HTMLElement {
         "div.kv",
         { "data-warn": warn ? "1" : undefined },
         h("span.kv-label", { text: label }),
-        typeof value === "string" ? h("span.kv-value", { text: value }) : h("span.kv-value", {}, value),
+        typeof value === "string"
+            ? h("span.kv-value", { text: value })
+            : h("span.kv-value", {}, value)
     );
 }
 
@@ -49,7 +54,7 @@ export function figure(value: string, label: string, warn = false): HTMLElement 
         "div.figure",
         { "data-warn": warn ? "1" : undefined },
         h("span.figure-value", { text: value }),
-        h("span.figure-label", { text: label }),
+        h("span.figure-label", { text: label })
     );
 }
 

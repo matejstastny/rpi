@@ -60,7 +60,7 @@ func main() {
 
 	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	srv.Shutdown(shutdown)
+	_ = srv.Shutdown(shutdown)
 }
 
 func (s *server) routes() http.Handler {
@@ -118,7 +118,7 @@ func (s *server) handleUpload(w http.ResponseWriter, r *http.Request) {
 			part = p
 			break
 		}
-		p.Close()
+		_ = p.Close()
 	}
 
 	name := sanitizeName(part.FileName())
@@ -136,15 +136,15 @@ func (s *server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	out, err := os.OpenFile(filepath.Join(dir, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		fail(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	written, err := io.Copy(out, part)
-	out.Close()
+	_ = out.Close()
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		if err.Error() == "http: request body too large" {
 			fail(w, http.StatusRequestEntityTooLarge, fmt.Errorf("that is over the %s limit", human(s.cfg.maxFileSize)))
 			return
@@ -155,7 +155,7 @@ func (s *server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	e := &entry{ID: id, Name: name, Size: written, Created: time.Now()}
 	if err := s.store.add(e); err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		fail(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -232,7 +232,7 @@ func disposition(name string) string {
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(body)
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 func fail(w http.ResponseWriter, status int, err error) {

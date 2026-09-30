@@ -24,13 +24,6 @@ func logOnce(key string, err error) {
 	log.Printf("%s: %v", key, err)
 }
 
-func firstValue(samples []sample) float64 {
-	if len(samples) == 0 {
-		return 0
-	}
-	return samples[0].value
-}
-
 // byHost collapses a query result to one value per host
 func byHost(samples []sample) map[string]float64 {
 	out := make(map[string]float64, len(samples))

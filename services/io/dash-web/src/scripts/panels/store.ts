@@ -4,9 +4,16 @@ import { h } from "../dom";
 import { bytes, count, duration } from "../format";
 import { empty, figure, kv, kvGrid, panel } from "../ui";
 
-export function storePanel(info: VictoriaInfo | null, accent: string, window: { lookback: string; step: string }): HTMLElement {
+export function storePanel(
+    info: VictoriaInfo | null,
+    accent: string,
+    window: { lookback: string; step: string }
+): HTMLElement {
     if (!info) {
-        return panel({ title: "metrics store", span: "span-store", accent }, empty("victoria-metrics did not answer"));
+        return panel(
+            { title: "metrics store", span: "span-store", accent },
+            empty("victoria-metrics did not answer")
+        );
     }
 
     // the numbers are tiny next to a TB of free space, so the bar is drawn
@@ -22,15 +29,17 @@ export function storePanel(info: VictoriaInfo | null, accent: string, window: { 
             figure(count(info.series), "series"),
             figure(count(info.rows), "samples"),
             figure(bytes(info.dataBytes), "on disk"),
-            figure(info.retention, "retention"),
+            figure(info.retention, "retention")
         ),
         bar("storage", `${bytes(info.dataBytes)} of ${bytes(total)}`, Math.max(usedPct, 0.4)),
         kvGrid(
             kv("label pairs", count(info.labelPairs)),
             kv("free space", bytes(info.freeBytes)),
             kv("uptime", duration(info.uptimeSec)),
-            kv("chart window", `${window.lookback} at ${window.step}`),
+            kv("chart window", `${window.lookback} at ${window.step}`)
         ),
-        h("p.micro-note", { text: "node-exporter on all three boxes, scraped every 15s over the tailnet" }),
+        h("p.micro-note", {
+            text: "node-exporter on all three boxes, scraped every 15s over the tailnet"
+        })
     );
 }

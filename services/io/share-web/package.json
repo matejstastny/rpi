@@ -10,13 +10,16 @@
         "dev": "astro dev",
         "build": "astro build",
         "preview": "astro preview",
-        "typecheck": "astro check"
+        "typecheck": "astro check",
+        "format": "prettier --check . --ignore-path ../../../.prettierignore"
     },
     "dependencies": {
         "astro": "^7.3.4"
     },
     "devDependencies": {
         "@astrojs/check": "^0.9.10",
+        "prettier": "^3.7.4",
+        "prettier-plugin-astro": "^0.14.1",
         "typescript": "^5.9.3"
     }
 }

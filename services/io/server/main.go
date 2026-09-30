@@ -60,7 +60,7 @@ func main() {
 
 	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	srv.Shutdown(shutdown)
+	_ = srv.Shutdown(shutdown)
 }
 
 func (s *server) routes() http.Handler {
@@ -225,7 +225,9 @@ func (s *server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	updates, live := job.subscribe()
 	if !live {
 		final, _ := job.snapshot()
-		send(final)
+		if err := send(final); err != nil {
+			return
+		}
 		return
 	}
 	defer job.unsubscribe(updates)
@@ -250,7 +252,9 @@ func (s *server) handleEvents(w http.ResponseWriter, r *http.Request) {
 				// client was slow, so fall back to the stored snapshot
 				if !sentFinal {
 					final, _ := job.snapshot()
-					send(final)
+					if err := send(final); err != nil {
+						return
+					}
 				}
 				return
 			}
@@ -359,7 +363,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, into any) error {
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(body)
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 func fail(w http.ResponseWriter, status int, err error) {

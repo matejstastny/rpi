@@ -1,0 +1,16 @@
+# generated
+services/io/*-server/dist/
+services/io/server/dist/
+services/io/build/
+
+# js
+**/node_modules/
+**/.astro/
+
+# local tool configuration and caches
+mise.local.toml
+.ruff_cache/
+.mypy_cache/
+
+# formatter cache
+.prettier-cache/

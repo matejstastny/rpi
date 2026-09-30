@@ -63,20 +63,20 @@ func (s *store) load() error {
 		raw, err := os.ReadFile(filepath.Join(dir, "meta.json"))
 		if err != nil {
 			log.Printf("sweeping incomplete share dir %s", d.Name())
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 
 		var e entry
 		if err := json.Unmarshal(raw, &e); err != nil || e.ID != d.Name() {
 			log.Printf("sweeping unreadable share dir %s", d.Name())
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 
 		if _, err := os.Stat(e.path(s.cfg.dir)); err != nil {
 			log.Printf("sweeping share dir with missing file %s", d.Name())
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 			continue
 		}
 

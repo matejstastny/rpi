@@ -24,8 +24,8 @@ export function gauge({ label, value, fill, warn, sub }: GaugeOptions): HTMLElem
             cx: 20,
             cy: 20,
             r: RADIUS,
-            "stroke-dasharray": `${(drawn * CIRCUMFERENCE).toFixed(2)} ${CIRCUMFERENCE.toFixed(2)}`,
-        }),
+            "stroke-dasharray": `${(drawn * CIRCUMFERENCE).toFixed(2)} ${CIRCUMFERENCE.toFixed(2)}`
+        })
     );
 
     return h(
@@ -33,7 +33,7 @@ export function gauge({ label, value, fill, warn, sub }: GaugeOptions): HTMLElem
         { "data-warn": warn ? "1" : undefined },
         h("div.gauge-dial", {}, ring, h("span.gauge-value", { text: value })),
         h("span.gauge-label", { text: label }),
-        sub ? h("span.gauge-sub", { text: sub }) : null,
+        sub ? h("span.gauge-sub", { text: sub }) : null
     );
 }
 
@@ -46,7 +46,7 @@ export function sparkline(values: number[] | undefined, extra = ""): SVGElement 
     const chart = svg("svg", {
         class: `spark ${extra}`.trim(),
         viewBox: "0 0 100 30",
-        preserveAspectRatio: "none",
+        preserveAspectRatio: "none"
     });
     if (!values || values.length < 2) return chart;
 
@@ -61,7 +61,7 @@ export function sparkline(values: number[] | undefined, extra = ""): SVGElement 
     chart.append(
         svg("polygon", { class: "spark-area", points: `0,30 ${line} 100,30` }),
         svg("polyline", { class: "spark-line", points: line }),
-        svg("circle", { class: "spark-head", cx: 100, cy: y(values[values.length - 1]!), r: 1.6 }),
+        svg("circle", { class: "spark-head", cx: 100, cy: y(values[values.length - 1]!), r: 1.6 })
     );
     return chart;
 }
@@ -71,12 +71,17 @@ export function bar(label: string, right: string, fill: number, warn = false): H
     return h(
         "div.bar",
         { "data-warn": warn ? "1" : undefined },
-        h("div.bar-head", {}, h("span.bar-label", { text: label }), h("span.bar-right", { text: right })),
+        h(
+            "div.bar-head",
+            {},
+            h("span.bar-label", { text: label }),
+            h("span.bar-right", { text: right })
+        ),
         h(
             "div.bar-track",
             {},
-            h("div.bar-fill", { style: `width:${Math.max(0, Math.min(100, fill)).toFixed(1)}%` }),
-        ),
+            h("div.bar-fill", { style: `width:${Math.max(0, Math.min(100, fill)).toFixed(1)}%` })
+        )
     );
 }
 
@@ -87,7 +92,7 @@ export function bar(label: string, right: string, fill: number, warn = false): H
  */
 export function columns(
     values: number[],
-    options: { max?: number; warnAt?: number; title?: (v: number, i: number) => string } = {},
+    options: { max?: number; warnAt?: number; title?: (v: number, i: number) => string } = {}
 ): HTMLElement {
     const ceiling = options.max ?? Math.max(1, ...values);
     return h(
@@ -97,17 +102,23 @@ export function columns(
             h(
                 "span.column",
                 {
-                    "data-warn": options.warnAt !== undefined && v >= options.warnAt ? "1" : undefined,
-                    title: options.title ? options.title(v, i) : `${v}`,
+                    "data-warn":
+                        options.warnAt !== undefined && v >= options.warnAt ? "1" : undefined,
+                    title: options.title ? options.title(v, i) : `${v}`
                 },
-                h("i.column-fill", { style: `height:${Math.max(3, (v / ceiling) * 100).toFixed(1)}%` }),
-            ),
-        ),
+                h("i.column-fill", {
+                    style: `height:${Math.max(3, (v / ceiling) * 100).toFixed(1)}%`
+                })
+            )
+        )
     );
 }
 
 /** a ranked list with a bar behind each row, for adguard's top-N tables */
-export function ranked(rows: { name: string; count: number }[], render: (value: number) => string): HTMLElement {
+export function ranked(
+    rows: { name: string; count: number }[],
+    render: (value: number) => string
+): HTMLElement {
     const max = Math.max(1, ...rows.map((r) => r.count));
     return h(
         "ul.ranked",
@@ -118,8 +129,8 @@ export function ranked(rows: { name: string; count: number }[], render: (value: 
                 { title: row.name },
                 h("span.ranked-track", { style: `width:${((row.count / max) * 100).toFixed(1)}%` }),
                 h("span.ranked-name", { text: row.name }),
-                h("span.ranked-count", { text: render(row.count) }),
-            ),
-        ),
+                h("span.ranked-count", { text: render(row.count) })
+            )
+        )
     );
 }

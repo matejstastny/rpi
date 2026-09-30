@@ -14,8 +14,16 @@ function row(file: FileEntry): HTMLLIElement {
 
     const facts = document.createElement("span");
     facts.className = "file-facts";
-    const where = [file.cached ? "cache" : "", file.library ? "library" : ""].filter(Boolean).join(" + ");
-    for (const text of [file.format, file.quality ?? "", bytes(file.size), ago(file.created), where]) {
+    const where = [file.cached ? "cache" : "", file.library ? "library" : ""]
+        .filter(Boolean)
+        .join(" + ");
+    for (const text of [
+        file.format,
+        file.quality ?? "",
+        bytes(file.size),
+        ago(file.created),
+        where
+    ]) {
         if (!text) continue;
         const tag = document.createElement("span");
         tag.className = "tag";
