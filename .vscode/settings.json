@@ -31,10 +31,13 @@
     "json.format.enable": true,
 
     "files.exclude": {
+        "**/node_modules": true,
         "**/.ruff_cache": true,
         "**/.mypy_cache": true,
         "**/__pycache__": true,
         "**/*.egg-info": true,
+        "**/.astro": true,
         "**/.venv": true
-    }
+    },
+    "js/ts.experimental.useTsgo": false
 }
