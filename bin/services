@@ -3,7 +3,6 @@
 # display name|openrc service|process name
 leda_services='
 leds|leds|-
-fans|fans|-
 adguard home|adguardhome|adguardhome
 soju chat|soju|soju
 tailscale exit node|tailscale|tailscaled
@@ -13,7 +12,6 @@ spotifyd airplay bridge|pyatv-bridge|relay.sh
 
 thebe_services='
 leds|leds|-
-fans|fans|-
 tailscale subnet router|tailscale|tailscaled
 unbound resolver|unbound|unbound
 adguard home|adguardhome|adguardhome
@@ -24,7 +22,6 @@ elara.boo tunnel|elara-boo-tunnel|cloudflared
 
 io_services='
 leds|leds|-
-fans|fans|-
 tailscale|tailscale|tailscaled
 ytdl downloader|ytdl|ytdl
 quickshare|share|share
@@ -103,16 +100,6 @@ fi
 case "$led_state" in
 on) system_info="${system_info}   led on" ;;
 off) system_info="${system_info}   led off" ;;
-esac
-
-fan_state=''
-if command -v fans >/dev/null 2>&1; then
-	fan_state=$(fans state 2>/dev/null || echo unknown)
-fi
-
-case "$fan_state" in
-on) system_info="${system_info}   fan on" ;;
-off) system_info="${system_info}   fan off" ;;
 esac
 
 printf '\n'
