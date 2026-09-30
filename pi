@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #@ manage raspberry pis over tailscale
 
+import argparse
 import os
 import re
 import shlex
@@ -33,9 +34,7 @@ SSH_OPTS = [
 ]
 
 
-def parser() -> "argparse.ArgumentParser":
-    import argparse
-
+def parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("hosts", nargs="*", metavar="HOST", help="host names (default: all)")
     common.add_argument("--host", action="append", dest="host_flags", metavar="HOST", help="select a host (may be repeated)")
@@ -406,7 +405,9 @@ def run_sync(args, pull: bool = False) -> int:
     if args.dry_run:
         print("[dry run]")
 
-    synced, skipped, failed = [], [], []
+    synced: list[str] = []
+    skipped: list[str] = []
+    failed: list[str] = []
     for name in names:
         host = hosts.get(name)
         if host is None:
