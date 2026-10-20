@@ -16,7 +16,7 @@ for file in $(git ls-files 'bin/*' 'services/**/install' 'services/**/prepare' '
 	sh -n "$file"
 done
 
-for web in services/io/web services/io/share-web services/io/dash-web; do
+for web in services/io/web services/io/share-web services/io/dash-web services/io/torrent-web; do
 	echo "▸ $(basename "$web"): installing dependencies"
 	(
 		cd "$web"
@@ -27,7 +27,7 @@ for web in services/io/web services/io/share-web services/io/dash-web; do
 	)
 done
 
-for server in services/io/server services/io/share-server services/io/dash-server; do
+for server in services/io/server services/io/share-server services/io/dash-server services/io/torrent-server; do
 	echo "▸ $(basename "$server"): checking Go"
 	(
 		cd "$server"

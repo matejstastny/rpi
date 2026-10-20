@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="torrent"
+description="web ui for transmission's rpc, tailnet only"
+
+command=/usr/local/bin/torrent
+command_user=torrent:torrent
+respawn_delay=5
+respawn_max=0
+
+depend() {
+	need net localmount
+	after firewall tailscale transmission-daemon
+}

@@ -48,12 +48,13 @@ torrent.elara.boo {
 		Referrer-Policy no-referrer
 	}
 
-	# transmission's rpc has no auth of its own; loopback bind + this gate is
-	# the only thing standing between it and the tailnet
+	# torrent-server has no auth of its own, same as transmission's rpc
+	# behind it; loopback bind + this gate is the only thing standing between
+	# either of them and the tailnet
 	@outside not remote_ip 100.64.0.0/10 192.168.250.0/24 127.0.0.1/32 ::1
 	route {
 		abort @outside
-		reverse_proxy 127.0.0.1:9091
+		reverse_proxy 127.0.0.1:8093
 	}
 }
 

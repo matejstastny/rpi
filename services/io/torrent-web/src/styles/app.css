@@ -1,0 +1,428 @@
+/* Maple Mono, the same subset the terminal and elara.boo use. OFL 1.1. */
+@font-face {
+    font-family: "Maple";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/maple-400.woff2") format("woff2");
+}
+@font-face {
+    font-family: "Maple";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/maple-600.woff2") format("woff2");
+}
+
+:root {
+    /* dotfiles/bin/palette, same tokens as elara.boo and the other io sites */
+    --base: #11111b;
+    --surface: #181825;
+    --overlay: #25253a;
+    --muted: #3d3d5c;
+    --dim: #9898c0;
+    --text: #dce0f4;
+    --bright: #f0f0ff;
+    --rose: #c47ab8;
+
+    /* io's own accent, from dotfiles/pi/hosts/io.toml */
+    --accent: #9b6bc9;
+    --accent-alt: #a855c9;
+
+    --green: #a6e3a1;
+    --red: #f38ba8;
+
+    --gutter: clamp(20px, 5vw, 56px);
+    --rail: 6rem;
+    --rule: 1px solid var(--overlay);
+    --dash: 1px dashed var(--overlay);
+
+    color-scheme: dark;
+    font-family:
+        "Maple", ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+html {
+    background: var(--base);
+    min-width: 320px;
+}
+
+body {
+    background: var(--base);
+    color: var(--text);
+    font-size: clamp(0.82rem, 0.78rem + 0.2vw, 0.9rem);
+    line-height: 1.7;
+    margin: 0;
+    min-height: 100vh;
+}
+
+a {
+    color: inherit;
+}
+
+::selection {
+    background: var(--accent);
+    color: var(--base);
+}
+
+:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--rose);
+    outline-offset: 3px;
+}
+
+.shell {
+    margin: 0 auto;
+    max-width: 760px;
+    padding: clamp(28px, 6vw, 64px) var(--gutter) 64px;
+}
+
+/* ---------- chrome ---------- */
+
+.top {
+    align-items: baseline;
+    border-bottom: var(--rule);
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+    padding-bottom: 14px;
+}
+
+.mark {
+    color: var(--bright);
+    letter-spacing: 0.02em;
+}
+
+.mark .glyph {
+    color: var(--accent);
+}
+
+.mark .host {
+    color: var(--dim);
+}
+
+footer {
+    border-top: var(--rule);
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    margin-top: 40px;
+    padding-top: 14px;
+}
+
+/* ---------- primitives ---------- */
+
+.label {
+    color: var(--dim);
+    font-size: 0.68rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    line-height: 1.5;
+    margin: 0;
+    padding-top: 0.45em;
+    text-transform: lowercase;
+}
+
+.row {
+    align-items: start;
+    border-top: var(--dash);
+    display: grid;
+    gap: 6px 18px;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    padding-block: 12px;
+}
+
+.row:first-of-type {
+    border-top: 0;
+}
+
+.field {
+    background: var(--surface);
+    border: 1px solid var(--overlay);
+    border-radius: 3px;
+    color: var(--text);
+    font: inherit;
+    padding: 0.5em 0.7em;
+    width: 100%;
+}
+
+.field::placeholder {
+    color: var(--muted);
+}
+
+.field:hover {
+    border-color: var(--muted);
+}
+
+.go {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    color: var(--bright);
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: 0.1em;
+    padding: 0.5em 1.4em;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+.go:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    border-color: var(--accent-alt);
+}
+
+.go:disabled {
+    border-color: var(--overlay);
+    color: var(--muted);
+    cursor: default;
+}
+
+.ghost {
+    background: none;
+    border: 1px solid var(--overlay);
+    border-radius: 3px;
+    color: var(--dim);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    padding: 0.2em 0.9em;
+    text-decoration: none;
+}
+
+.ghost:hover {
+    border-color: var(--muted);
+    color: var(--bright);
+}
+
+.ghost.danger:hover {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.tag {
+    border: 1px solid var(--overlay);
+    border-radius: 999px;
+    color: var(--dim);
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    padding: 0.1em 0.7em;
+    white-space: nowrap;
+}
+
+.tag[data-status="downloading"] {
+    border-color: var(--accent);
+    color: var(--bright);
+}
+
+.tag[data-status="seeding"] {
+    border-color: var(--green);
+    color: var(--green);
+}
+
+.tag[data-status="error"] {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.note {
+    color: var(--dim);
+    font-size: 0.74rem;
+    margin: 0.4em 0 0;
+}
+
+.note.bad {
+    color: var(--red);
+}
+
+.note.good {
+    color: var(--green);
+}
+
+/* ---------- add ---------- */
+
+.add-row {
+    display: flex;
+    gap: 10px;
+}
+
+.dropzone {
+    align-items: center;
+    background: var(--surface);
+    border: 1px dashed var(--overlay);
+    border-radius: 3px;
+    color: var(--dim);
+    cursor: pointer;
+    display: flex;
+    font-size: 0.76rem;
+    justify-content: center;
+    margin-top: 10px;
+    min-height: 2.6em;
+    padding: 0.6em;
+    text-align: center;
+    transition:
+        border-color 150ms ease,
+        color 150ms ease;
+}
+
+.dropzone:hover,
+.dropzone.drag {
+    border-color: var(--accent);
+    color: var(--bright);
+}
+
+/* ---------- totals ---------- */
+
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat strong {
+    color: var(--bright);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.stat small {
+    color: var(--dim);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+}
+
+/* ---------- torrent list ---------- */
+
+.bar {
+    background: var(--surface);
+    border: 1px solid var(--overlay);
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+    height: 100%;
+    transition: width 220ms ease;
+    width: 0;
+}
+
+.torrents {
+    display: grid;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.torrents li {
+    border-top: var(--dash);
+    display: grid;
+    gap: 7px 18px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-block: 12px;
+}
+
+.torrents li:first-child {
+    border-top: 0;
+}
+
+.torrent-title {
+    color: var(--bright);
+    grid-column: 1;
+    grid-row: 1;
+    overflow-wrap: anywhere;
+}
+
+.torrent-actions {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.torrent-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.torrent-facts {
+    align-items: center;
+    color: var(--dim);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    gap: 4px 8px;
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+.empty {
+    color: var(--muted);
+    padding-block: 18px;
+}
+
+@media (max-width: 600px) {
+    .row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .add-row {
+        flex-direction: column;
+    }
+
+    .torrents li {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .torrent-title {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .torrent-bar {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .torrent-facts {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .torrent-actions {
+        grid-column: 1;
+        grid-row: 4;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

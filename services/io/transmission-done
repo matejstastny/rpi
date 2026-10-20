@@ -1,7 +1,8 @@
 #!/bin/sh
-#@ runs as the transmission user when a torrent finishes, hardlinks the
-#@ finished video into jellyfin's library, same trick ytdl's "keep" uses so
-#@ seeding can keep reading the original in place
+#@ runs as the transmission user when a torrent finishes. hardlinks a
+#@ finished video into jellyfin's library (same trick ytdl's "keep" uses so
+#@ seeding can keep reading the original in place), then pauses it so it
+#@ never seeds on its own; resuming to seed is a manual choice from the ui.
 
 set -eu
 
@@ -10,11 +11,10 @@ dest_dir=/srv/media/video
 
 # a multi-file torrent's top level is a directory, skip it rather than
 # guessing which member is the actual video, move the one you want by hand
-[ -d "$src" ] && exit 0
+if [ ! -d "$src" ]; then
+	case "$TR_TORRENT_NAME" in
+	*.mkv | *.mp4 | *.avi | *.m4v | *.webm) ln -f "$src" "$dest_dir/$TR_TORRENT_NAME" ;;
+	esac
+fi
 
-case "$TR_TORRENT_NAME" in
-*.mkv | *.mp4 | *.avi | *.m4v | *.webm) ;;
-*) exit 0 ;;
-esac
-
-ln -f "$src" "$dest_dir/$TR_TORRENT_NAME"
+transmission-remote 127.0.0.1:9091 -t "${TR_TORRENT_ID:?}" --stop >/dev/null

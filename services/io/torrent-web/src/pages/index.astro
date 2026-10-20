@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="torrent · io">
+    <section class="row">
+        <span class="label">add</span>
+        <div>
+            <form id="magnet-form" autocomplete="off" novalidate>
+                <div class="add-row">
+                    <input
+                        class="field"
+                        id="magnet"
+                        type="text"
+                        inputmode="url"
+                        spellcheck="false"
+                        placeholder="paste a magnet link"
+                    />
+                    <button class="go" id="go" type="submit">add</button>
+                </div>
+            </form>
+            <label class="dropzone" id="drop">
+                <input type="file" id="file" accept=".torrent" hidden />
+                <span id="drop-text">or drop a .torrent file here</span>
+            </label>
+            <p class="note" id="add-note"></p>
+        </div>
+    </section>
+
+    <section class="row">
+        <span class="label">totals</span>
+        <div class="stats" id="stats">
+            <span class="stat"><strong id="stat-down">—</strong><small>down</small></span>
+            <span class="stat"><strong id="stat-up">—</strong><small>up</small></span>
+            <span class="stat"><strong id="stat-count">—</strong><small>torrents</small></span>
+            <span class="stat"><strong id="stat-active">—</strong><small>active</small></span>
+        </div>
+    </section>
+
+    <section class="row">
+        <span class="label">torrents</span>
+        <div>
+            <ul class="torrents" id="torrents"></ul>
+            <p class="empty" id="empty" hidden></p>
+        </div>
+    </section>
+</Base>
+
+<script>
+    import "../scripts/app";
+</script>

@@ -27,6 +27,7 @@ ytdl downloader|ytdl|ytdl
 quickshare|share|share
 jellyfin|jellyfin|jellyfin
 transmission|transmission-daemon|transmission-daemon
+torrent web ui|torrent|torrent
 caddy proxy|caddy|caddy
 '
 

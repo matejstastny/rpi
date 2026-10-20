@@ -8,8 +8,8 @@ as_root() {
 
 self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ]; then
-	echo "  ! no ytdl/share/dash binary in this payload"
+if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ]; then
+	echo "  ! no ytdl/share/dash/torrent binary in this payload"
 	echo "    they are built on your laptop, so run: bin/pi sync io --services"
 	exit 1
 fi
@@ -87,6 +87,17 @@ fi
 as_root install -d -o root -g root -m 755 /usr/local/libexec
 as_root install -o root -g root -m 755 "$self/transmission-done" /usr/local/libexec/transmission-done
 
+echo "▸ torrent: creating system user"
+as_root sh -c 'getent group torrent >/dev/null || addgroup -S torrent'
+as_root sh -c 'getent passwd torrent >/dev/null || adduser -S -D -H -h /var/lib/torrent -s /sbin/nologin -G torrent torrent'
+as_root install -d -o torrent -g torrent -m 755 /var/log/torrent
+
+echo "▸ torrent: installing the service"
+as_root rc-service torrent stop >/dev/null 2>&1 || true
+as_root install -o root -g root -m 755 "$self/torrent" /usr/local/bin/torrent
+as_root install -o root -g root -m 755 "$self/torrent.initd" /etc/init.d/torrent
+as_root install -o root -g root -m 644 "$self/torrent.confd" /etc/conf.d/torrent
+
 echo "▸ node-exporter: installing"
 as_root apk add prometheus-node-exporter prometheus-node-exporter-openrc
 
@@ -151,6 +162,7 @@ as_root rc-update add caddy default
 as_root rc-update add node-exporter default
 as_root rc-update add victoria-metrics default
 as_root rc-update add dash default
+as_root rc-update add torrent default
 as_root rc-service ytdl start || as_root rc-service ytdl restart
 as_root rc-service share start || as_root rc-service share restart
 as_root rc-service jellyfin start || as_root rc-service jellyfin restart
@@ -158,6 +170,7 @@ as_root rc-service transmission-daemon start || as_root rc-service transmission-
 as_root rc-service node-exporter start || as_root rc-service node-exporter restart
 as_root rc-service victoria-metrics start || as_root rc-service victoria-metrics restart
 as_root rc-service dash start || as_root rc-service dash restart
+as_root rc-service torrent start || as_root rc-service torrent restart
 
 if as_root test -f /etc/caddy/caddy.env; then
 	# "start" on an already-running service just no-ops successfully, so it
@@ -184,8 +197,9 @@ echo "  ! jellyfin needs its first-run setup wizard, can't be scripted:"
 echo "      http://jellyfin.elara.boo or http://<io's lan ip>:8096"
 echo "      add /srv/media/video as a Home Videos library, /srv/media/music as Music"
 
-echo "  ! transmission's rpc has no login of its own, loopback bind + caddy's"
-echo "    tailnet/lan gate on torrent.elara.boo is the only thing guarding it"
+echo "  ! neither torrent-server nor transmission's rpc behind it has a login"
+echo "    of its own, loopback bind + caddy's tailnet/lan gate on"
+echo "    torrent.elara.boo is the only thing guarding either of them"
 
 if as_root test ! -f /etc/dash/dash.env; then
 	echo "  ! no /etc/dash/dash.env yet"

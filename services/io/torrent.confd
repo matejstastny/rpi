@@ -1,0 +1,7 @@
+# the service only ever listens on loopback; caddy is what the tailnet talks to
+export TORRENT_LISTEN=127.0.0.1:8093
+
+export TORRENT_TRANSMISSION_URL=http://127.0.0.1:9091/transmission/rpc
+
+output_log=/var/log/torrent/torrent.log
+error_log=/var/log/torrent/torrent.err
