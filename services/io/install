@@ -8,8 +8,8 @@ as_root() {
 
 self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ]; then
-	echo "  ! no ytdl/share/dash/torrent binary in this payload"
+if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ] || [ ! -f "$self/watch" ]; then
+	echo "  ! no ytdl/share/dash/torrent/watch binary in this payload"
 	echo "    they are built on your laptop, so run: bin/pi sync io --services"
 	exit 1
 fi
@@ -134,6 +134,30 @@ as_root install -o root -g root -m 644 "$self/dash.confd" /etc/conf.d/dash
 as_root install -d -o root -g root -m 755 /etc/dash
 as_root install -o root -g root -m 644 "$self/dash-catalog.json" /etc/dash/catalog.json
 
+echo "▸ watch: creating system user"
+as_root sh -c 'getent group watch >/dev/null || addgroup -S watch'
+as_root sh -c 'getent passwd watch >/dev/null || adduser -S -D -H -h /var/lib/watch -s /sbin/nologin -G watch watch'
+
+echo "▸ watch: creating directories"
+as_root install -d -o watch -g watch -m 755 /var/lib/watch /var/lib/watch/art /var/log/watch
+
+echo "▸ watch: installing the service"
+as_root rc-service watch stop >/dev/null 2>&1 || true
+as_root install -o root -g root -m 755 "$self/watch" /usr/local/bin/watch
+as_root install -o root -g root -m 755 "$self/watch.initd" /etc/init.d/watch
+as_root install -o root -g root -m 644 "$self/watch.confd" /etc/conf.d/watch
+
+# the markdown watchlist, converted by services/io/watch-import. the service
+# only reads it when /var/lib/watch/state.json does not exist yet, so copying
+# a newer seed over an in-use box is a no-op rather than a clobber.
+as_root install -d -o root -g root -m 755 /etc/watch
+as_root install -o root -g root -m 644 "$self/watch-seed.json" /etc/watch/seed.json
+
+echo "▸ vaultwarden: installing"
+as_root apk add vaultwarden vaultwarden-openrc vaultwarden-web-vault
+as_root rc-service vaultwarden stop >/dev/null 2>&1 || true
+as_root install -o root -g root -m 644 "$self/vaultwarden.confd" /etc/conf.d/vaultwarden
+
 echo "▸ caddy: creating system user"
 as_root sh -c 'getent group caddy >/dev/null || addgroup -S caddy'
 as_root sh -c 'getent passwd caddy >/dev/null || adduser -S -D -H -h /var/lib/caddy -s /sbin/nologin -G caddy caddy'
@@ -163,6 +187,8 @@ as_root rc-update add node-exporter default
 as_root rc-update add victoria-metrics default
 as_root rc-update add dash default
 as_root rc-update add torrent default
+as_root rc-update add watch default
+as_root rc-update add vaultwarden default
 as_root rc-service ytdl start || as_root rc-service ytdl restart
 as_root rc-service share start || as_root rc-service share restart
 as_root rc-service jellyfin start || as_root rc-service jellyfin restart
@@ -171,6 +197,8 @@ as_root rc-service node-exporter start || as_root rc-service node-exporter resta
 as_root rc-service victoria-metrics start || as_root rc-service victoria-metrics restart
 as_root rc-service dash start || as_root rc-service dash restart
 as_root rc-service torrent start || as_root rc-service torrent restart
+as_root rc-service watch start || as_root rc-service watch restart
+as_root rc-service vaultwarden start || as_root rc-service vaultwarden restart
 
 if as_root test -f /etc/caddy/caddy.env; then
 	# "start" on an already-running service just no-ops successfully, so it
@@ -189,9 +217,10 @@ else
 	echo "    then: ssh io 'sudo rc-service caddy start'"
 fi
 
-echo "  ! yt.elara.boo, share.elara.boo, jellyfin.elara.boo, torrent.elara.boo and"
-echo "    dash.elara.boo need DNS rewrites in AdGuard Home pointing at io's"
-echo "    Tailscale address:"
+echo "  ! yt.elara.boo, share.elara.boo, jellyfin.elara.boo, torrent.elara.boo,"
+echo "    dash.elara.boo, vault.elara.boo and watch.elara.boo need DNS rewrites"
+echo "    in AdGuard Home"
+echo "    pointing at io's Tailscale address:"
 echo "      $(tailscale ip -4 2>/dev/null | head -1)"
 echo "  ! jellyfin needs its first-run setup wizard, can't be scripted:"
 echo "      http://jellyfin.elara.boo or http://<io's lan ip>:8096"
@@ -209,6 +238,32 @@ if as_root test ! -f /etc/dash/dash.env; then
 	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/dash/dash.env\"'"
 	echo "      # paste DASH_ADGUARD_PASS=<password>, Enter, Ctrl-D"
 	echo "      ssh io 'sudo rc-service dash restart'"
+	echo "    this is deliberately not tracked in git, it's a live secret"
+fi
+
+if as_root test ! -f /etc/vaultwarden/vaultwarden.env; then
+	echo "  ! no /etc/vaultwarden/vaultwarden.env yet"
+	echo "    the admin panel at vault.elara.boo/admin needs ADMIN_TOKEN set."
+	echo "    generate an argon2 hash of a random password and paste it as the"
+	echo "    token, this is deliberately not tracked in git:"
+	echo "      ssh io 'vaultwarden hash'"
+	echo "      ssh io 'sudo install -d -m 755 /etc/vaultwarden'"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/vaultwarden/vaultwarden.env\"'"
+	echo "      # paste ADMIN_TOKEN='\$argon2id\$...', Enter, Ctrl-D"
+	echo "      ssh io 'sudo rc-service vaultwarden restart'"
+	echo "  ! signups are closed by default: flip SIGNUPS_ALLOWED to true in"
+	echo "    vaultwarden.confd, restart, create your one account, then flip it"
+	echo "    back to false and restart again"
+fi
+
+if as_root test ! -f /etc/watch/watch.env; then
+	echo "  ! no /etc/watch/watch.env yet"
+	echo "    anime lookup is anilist and needs no key, so the anime library"
+	echo "    already works. series and movies are tmdb, which does:"
+	echo "      # free key from https://www.themoviedb.org/settings/api"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/watch/watch.env\"'"
+	echo "      # paste WATCH_TMDB_KEY=<key>, Enter, Ctrl-D"
+	echo "      ssh io 'sudo rc-service watch restart'"
 	echo "    this is deliberately not tracked in git, it's a live secret"
 fi
 

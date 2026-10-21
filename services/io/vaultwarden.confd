@@ -1,0 +1,29 @@
+# the service only ever listens on loopback; caddy is what the tailnet talks to
+export ROCKET_ADDRESS=127.0.0.1
+export ROCKET_PORT=8094
+
+export DATA_FOLDER=/var/lib/vaultwarden
+
+export DOMAIN=https://vault.elara.boo
+
+export WEB_VAULT_ENABLED=true
+export WEB_VAULT_FOLDER=/usr/share/webapps/vaultwarden-web
+
+# flip to true only long enough to create your own account, then back to
+# false; the token below guards the admin panel in the meantime regardless
+export SIGNUPS_ALLOWED=false
+
+# admin panel at /admin, needed to manage the one account without db surgery.
+# a live secret, lives outside git the same way dash.env and caddy.env do;
+# install prints how to create this file. holds a plain KEY=value, re-exported
+# so it lands in the daemon's environment. -r rather than -f because this
+# conf.d is also sourced by an unprivileged `rc-service vaultwarden status`,
+# which must not fail over a secret it has no business reading.
+if [ -r /etc/vaultwarden/vaultwarden.env ]; then
+	. /etc/vaultwarden/vaultwarden.env
+	export ADMIN_TOKEN
+fi
+
+logdir=/var/log/vaultwarden
+output_log="$logdir/access.log"
+error_log="$logdir/error.log"

@@ -1,0 +1,22 @@
+# the service only ever listens on loopback; caddy is what the tailnet talks to
+export WATCH_LISTEN=127.0.0.1:8095
+
+# state.json plus the poster cache in art/
+export WATCH_DIR=/var/lib/watch
+
+# the markdown import, only read when state.json does not exist yet; once the
+# web ui owns the list this file is never looked at again
+export WATCH_SEED=/etc/watch/seed.json
+
+# anime lookup is anilist, which needs no key. series and movies are tmdb,
+# which does, so that one is a live secret outside git; install prints how to
+# create this file. same shape and the same -r reasoning as dash.env: the
+# conf.d is also sourced by an unprivileged `rc-service watch status`, which
+# must not fail over a secret it has no business reading.
+if [ -r /etc/watch/watch.env ]; then
+	. /etc/watch/watch.env
+	export WATCH_TMDB_KEY
+fi
+
+output_log=/var/log/watch/watch.log
+error_log=/var/log/watch/watch.err

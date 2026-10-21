@@ -1,0 +1,495 @@
+#!/usr/bin/env python3
+"""turn the hand-written watchlist markdown into watch-seed.json.
+
+the service only reads the seed when /var/lib/watch/state.json does not exist
+yet, so this is a one-way import: once the web ui owns the list, re-running
+this changes nothing on the pi until that state file is deleted.
+
+usage: services/io/watch-import ~/notes/watchlist.md [--no-lookup]
+"""
+
+from __future__ import annotations
+
+import argparse
+import difflib
+import json
+import re
+import secrets
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+ANILIST = "https://graphql.anilist.co"
+
+# anilist 403s the default urllib user agent outright
+UA = "watchlist-import/1.0 (+https://watch.elara.boo)"
+
+QUERY = """
+query ($q: String) {
+  Page(perPage: 5) {
+    media(search: $q, type: ANIME, sort: SEARCH_MATCH) {
+      id
+      title { romaji english }
+      format
+      episodes
+      averageScore
+      genres
+      siteUrl
+      description(asHtml: false)
+      startDate { year }
+      coverImage { extraLarge large }
+      studios(isMain: true) { nodes { name } }
+    }
+  }
+}
+"""
+
+TIER_ORDER = ["N", "S", "A", "B", "C", "D"]
+
+MONTHS = {
+    m: i + 1
+    for i, m in enumerate(
+        [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ]
+    )
+}
+
+# matches the labels the go service uses for anything added through the web ui
+FORMATS = {
+    "TV": "TV",
+    "TV_SHORT": "TV Short",
+    "MOVIE": "Movie",
+    "SPECIAL": "Special",
+    "OVA": "OVA",
+    "ONA": "ONA",
+    "MUSIC": "Music",
+}
+
+ORDINALS = {
+    2: "Season 2",
+    3: "Season 3",
+    4: "Season 4",
+    5: "Season 5",
+    6: "Season 6",
+}
+
+
+def sections(text: str) -> dict[str, list[str]]:
+    """split on top-level markdown headings, keeping the raw lines of each"""
+    out: dict[str, list[str]] = {}
+    current = "PREAMBLE"
+    out[current] = []
+    for line in text.splitlines():
+        if line.startswith("# "):
+            current = line[2:].strip().upper()
+            out[current] = []
+        elif line.startswith("## ") and current == "CLAUDE CONTEXT NOTE":
+            out[current].append(line)
+        else:
+            out[current].append(line)
+    return out
+
+
+def parse_date(raw: str) -> str:
+    raw = raw.strip()
+    if not raw or raw.upper() == "NA":
+        return ""
+    found = re.match(r"([A-Za-z]+)\s+(\d{1,2})\s+(\d{4})", raw)
+    if not found:
+        return ""
+    month = MONTHS.get(found.group(1).lower())
+    if not month:
+        return ""
+    return f"{int(found.group(3)):04d}-{month:02d}-{int(found.group(2)):02d}"
+
+
+def parse_tierlist(lines: list[str]) -> list[dict]:
+    out: list[dict] = []
+    for line in lines:
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        rank, name, date = cells[0], cells[1], cells[2]
+        if not name or set(name) <= {"-", " "} or name.upper() == "NAME":
+            continue
+        if set(rank) <= {":", "-", " "}:
+            continue
+
+        # the numbered rows are the top-five shelf, which is tier N
+        tier = "N" if rank.isdigit() else rank.upper()
+        if tier not in TIER_ORDER:
+            continue
+
+        out.append(
+            {
+                "status": "ranked",
+                "tier": tier,
+                "title": name,
+                "finished": parse_date(date),
+                "sortKey": int(rank) if rank.isdigit() else len(out),
+            }
+        )
+    return out
+
+
+def parse_watching(lines: list[str]) -> list[dict]:
+    out: list[dict] = []
+    for line in lines:
+        line = line.strip()
+        if not line.startswith("- "):
+            continue
+        parts = [p.strip() for p in line[2:].split(":")]
+        title = parts[0]
+        predicted = ""
+        note = ""
+        progress = ""
+
+        if len(parts) > 1:
+            guess = parts[1]
+            found = re.match(r"([A-Z])\s*(?:\((.*)\))?", guess)
+            if found:
+                predicted = found.group(1)
+                note = (found.group(2) or "").strip()
+        if len(parts) > 2:
+            progress = parts[2].strip()
+            progress = re.sub(r"^ep\s*", "ep ", progress, flags=re.I)
+
+        out.append(
+            {
+                "status": "watching",
+                "title": title,
+                "predicted": predicted if predicted in TIER_ORDER else "",
+                "progress": progress,
+                "note": note,
+            }
+        )
+    return out
+
+
+def parse_bullets(lines: list[str], status: str) -> list[dict]:
+    out: list[dict] = []
+    for line in lines:
+        line = line.strip()
+        if not line.startswith("- "):
+            continue
+        title = line[2:].strip()
+        note = ""
+        found = re.match(r"(.*?)\s*\((.*)\)$", title)
+        if found:
+            title, note = found.group(1).strip(), found.group(2).strip()
+        if not title:
+            continue
+        out.append({"status": status, "title": title, "note": note})
+    return out
+
+
+def parse_tier_definitions(lines: list[str]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for line in lines:
+        found = re.match(r"\s*([NSABCD]):\s*(.+)", line)
+        if found:
+            out[found.group(1)] = found.group(2).strip()
+    return out
+
+
+# a handful of titles in the markdown are nicknames or typos that anilist's
+# own search cannot recover from on its own. keys are normalized, and the full
+# title is tried before the title with its S<n>/M<n> marker peeled off, so a
+# season whose official name carries no number can be named outright.
+ALIASES = {
+    "onimai": "Onii-chan wa Oshimai!",
+    "souso no frieren": "Sousou no Frieren",
+    "makeine too many loosing heroins": "Makeine: Too Many Losing Heroines!",
+    "jojo s bizzare adventures": "JoJo's Bizarre Adventure",
+    "naruto shippunden": "Naruto Shippuuden",
+    "my dressup darling": "My Dress-Up Darling",
+    "shadow s house s2": "Shadows House 2nd Season",
+    "sword art online s3": "Sword Art Online: Alicization",
+    "demon slayer s3": "Kimetsu no Yaiba: Katanakaji no Sato-hen",
+    "demon slayer s4": "Kimetsu no Yaiba: Hashira Geiko-hen",
+}
+
+
+def split_title(title: str) -> tuple[str, int, bool]:
+    """peel the trailing S<n>/M<n> marker off, returning base, number, is_movie"""
+    base = re.sub(r"\s*\(.*?\)\s*$", "", title).strip()
+
+    season = re.search(r"\bS(\d+)$", base)
+    if season:
+        return base[: season.start()].strip(), int(season.group(1)), False
+
+    movie = re.search(r"\bM(\d+)$", base)
+    if movie:
+        return base[: movie.start()].strip(), int(movie.group(1)), True
+
+    return base, 0, False
+
+
+def normalize(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def resolve(title: str) -> tuple[str, int, bool]:
+    """the name to search for, plus the season/movie markers still in play.
+
+    an alias on the whole title wins outright: it is there precisely because
+    the official name carries no season number to match on.
+    """
+    whole = ALIASES.get(normalize(title))
+    if whole:
+        return whole, 0, False
+
+    base, number, is_movie = split_title(title)
+    return ALIASES.get(normalize(base), base), number, is_movie
+
+
+def queries_for(title: str) -> list[str]:
+    """the searches to try, best guess first"""
+    base, number, is_movie = resolve(title)
+
+    out = []
+    if not is_movie and number > 1:
+        out.append(f"{base} {ORDINALS.get(number, f'Season {number}')}")
+    out.append(base)
+
+    seen = set()
+    return [q for q in out if q and not (q in seen or seen.add(q))]
+
+
+def title_score(candidate: dict, wanted: str) -> float:
+    """how well a search result matches the title we asked for.
+
+    a leading match counts for far more than a raw ratio does: the official
+    name is usually the nickname plus a subtitle, which tanks the ratio while
+    being exactly the right show.
+    """
+    want = normalize(wanted)
+    best = 0.0
+
+    for raw in (candidate["title"].get("english"), candidate["title"].get("romaji")):
+        if not raw:
+            continue
+        have = normalize(raw)
+        if have == want:
+            score = 1.0
+        elif have.startswith(want) or want.startswith(have):
+            score = 0.95
+        elif want in have:
+            score = 0.85
+        else:
+            score = difflib.SequenceMatcher(None, want, have).ratio()
+        best = max(best, score)
+
+    return best
+
+
+def enrich(entry: dict, threshold: float = 0.7) -> bool:
+    """attach anilist metadata, but only when the match is convincing"""
+    wanted, number, is_movie = resolve(entry["title"])
+
+    best = None
+    best_score = 0.0
+
+    for query in queries_for(entry["title"]):
+        media = []
+        for attempt in range(4):
+            try:
+                media = anilist(query)
+                break
+            except urllib.error.HTTPError as err:
+                if err.code == 429:
+                    time.sleep(20 * (attempt + 1))
+                    continue
+                print(f"  ! {entry['title']}: http {err.code}", file=sys.stderr)
+                return False
+            except Exception as err:  # noqa: BLE001
+                print(f"  ! {entry['title']}: {err}", file=sys.stderr)
+                return False
+
+        for candidate in media:
+            score = title_score(candidate, wanted)
+
+            # a trailing M<n> means a film, so a tv entry is the wrong row
+            # even when the name matches perfectly
+            if is_movie:
+                score += 0.2 if candidate.get("format") == "MOVIE" else -0.4
+            elif number > 1:
+                blob = " ".join(
+                    filter(None, [candidate["title"].get("english"), candidate["title"].get("romaji")])
+                )
+                score += 0.15 if re.search(rf"\b{number}(nd|rd|th)?\b", blob) else -0.15
+
+            # a specials reel or an opening-theme video shares the show's name
+            # exactly and is never what the line in the markdown meant
+            if candidate.get("format") in ("MUSIC", "SPECIAL"):
+                score -= 0.35
+
+            if score > best_score:
+                best, best_score = candidate, score
+
+        if best_score >= 0.9:
+            break
+        # a second query is a second request, so stay inside the rate limit
+        time.sleep(2.2)
+
+    if not best or best_score < threshold:
+        return False
+
+    cover = best.get("coverImage") or {}
+    studios = (best.get("studios") or {}).get("nodes") or []
+
+    entry["altTitle"] = best["title"].get("romaji") or ""
+    if entry["altTitle"] == entry["title"]:
+        entry["altTitle"] = ""
+    entry["poster"] = cover.get("extraLarge") or cover.get("large") or ""
+    entry["year"] = (best.get("startDate") or {}).get("year") or 0
+    entry["episodes"] = best.get("episodes") or 0
+    entry["format"] = FORMATS.get(best.get("format") or "", "")
+    entry["studio"] = studios[0]["name"] if studios else ""
+    entry["genres"] = best.get("genres") or []
+    entry["synopsis"] = strip_html(best.get("description") or "")
+    entry["score"] = best.get("averageScore") or 0
+    entry["provider"] = "anilist"
+    entry["providerId"] = str(best["id"])
+    entry["link"] = best.get("siteUrl") or ""
+    return True
+
+
+def strip_html(raw: str) -> str:
+    out = re.sub(r"<br\s*/?>", "\n", raw or "")
+    out = re.sub(r"<[^>]+>", "", out)
+    for entity, char in [("&quot;", '"'), ("&amp;", "&"), ("&#039;", "'"), ("&nbsp;", " ")]:
+        out = out.replace(entity, char)
+    paragraphs = [p.strip() for p in out.split("\n") if p.strip()]
+    return "\n\n".join(paragraphs)
+
+
+def anilist(query: str) -> list[dict]:
+    body = json.dumps({"query": QUERY, "variables": {"q": query}}).encode()
+    req = urllib.request.Request(
+        ANILIST,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": UA,
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as res:
+        payload = json.load(res)
+    return payload.get("data", {}).get("Page", {}).get("media", []) or []
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("source", type=Path, help="the markdown watchlist")
+    ap.add_argument("-o", "--out", type=Path, default=Path(__file__).parent / "watch-seed.json")
+    ap.add_argument("--no-lookup", action="store_true", help="skip anilist metadata")
+    args = ap.parse_args()
+
+    text = args.source.read_text(encoding="utf-8")
+    blocks = sections(text)
+
+    raw: list[dict] = []
+    raw += parse_watching(blocks.get("CURRENTLY WATCHING : TIER PREDICTION", []))
+    raw += parse_tierlist(blocks.get("TIERLIST", []))
+    raw += parse_bullets(blocks.get("QUE", []), "queue")
+    raw += parse_bullets(blocks.get("IF NOTHING IN QUE", []), "backlog")
+    raw += parse_bullets(blocks.get("NOWATCHLIST", []), "skipped")
+
+    definitions = parse_tier_definitions(blocks.get("TIER DEFINITION", []))
+
+    note_lines = blocks.get("CLAUDE CONTEXT NOTE", [])
+    instructions = "\n".join(note_lines).strip()
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+    # rank within each bucket follows the order the markdown had them in
+    buckets: dict[tuple[str, str], int] = {}
+    entries = []
+    matched = 0
+
+    for item in raw:
+        key = (item["status"], item.get("tier", ""))
+        rank = buckets.get(key, 0)
+        buckets[key] = rank + 1
+
+        entry = {
+            "id": secrets.token_hex(8),
+            "kind": "anime",
+            "status": item["status"],
+            "title": item["title"],
+            "altTitle": "",
+            "tier": item.get("tier", ""),
+            "rank": rank,
+            "progress": item.get("progress", ""),
+            "predicted": item.get("predicted", ""),
+            "finished": item.get("finished", ""),
+            "note": item.get("note", ""),
+            "poster": "",
+            "year": 0,
+            "episodes": 0,
+            "format": "",
+            "studio": "",
+            "genres": [],
+            "synopsis": "",
+            "score": 0,
+            "provider": "manual",
+            "providerId": "",
+            "link": "",
+            "added": now,
+            "updated": now,
+        }
+
+        if not args.no_lookup:
+            if enrich(entry):
+                matched += 1
+            else:
+                print(f"  · no confident match: {entry['title']}")
+            # anilist allows 30 requests a minute, so stay well under it
+            time.sleep(2.2)
+
+        entries.append({k: v for k, v in entry.items() if v not in ("", 0, [])} | {
+            "id": entry["id"],
+            "kind": entry["kind"],
+            "status": entry["status"],
+            "title": entry["title"],
+            "rank": entry["rank"],
+            "added": entry["added"],
+            "updated": entry["updated"],
+        })
+
+    state = {
+        "entries": entries,
+        "settings": {
+            "claudeInstructions": instructions,
+            "tierDefinitions": {t: definitions.get(t, "") for t in TIER_ORDER},
+        },
+    }
+
+    args.out.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"\n▸ {len(entries)} entries -> {args.out}")
+    if not args.no_lookup:
+        print(f"  {matched} matched on anilist, {len(entries) - matched} left bare")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

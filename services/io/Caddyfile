@@ -94,3 +94,43 @@ dash.elara.boo {
 		reverse_proxy 127.0.0.1:8092
 	}
 }
+
+vault.elara.boo {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		# bitwarden clients expect this off loopback too, but caddy is the
+		# tls-terminating edge so it is the one that has to set it
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	# has its own auth, but tailnet/lan-only anyway, same gate as everything else
+	@outside not remote_ip 100.64.0.0/10 192.168.250.0/24 127.0.0.1/32 ::1
+	route {
+		abort @outside
+		reverse_proxy 127.0.0.1:8094
+	}
+}
+
+watch.elara.boo {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+
+	# the whole watchlist is editable with no login of its own; loopback bind
+	# + this gate is the only thing standing between it and the tailnet
+	@outside not remote_ip 100.64.0.0/10 192.168.250.0/24 127.0.0.1/32 ::1
+	route {
+		abort @outside
+		reverse_proxy 127.0.0.1:8095
+	}
+}

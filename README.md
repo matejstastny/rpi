@@ -31,6 +31,8 @@
 | DONE `transmission-daemon`       | torrent client at `torrent.elara.boo`, `script-torrent-done` hardlinks finished video into jellyfin's library |
 | DONE `prometheus-node-exporter`  | metrics scrape target for io itself, scraped over loopback                                                    |
 | DONE `victoria-metrics` + `dash` | custom go+astro fleet dashboard at `dash.elara.boo`                                                           |
+| DONE `vaultwarden`               | bitwarden-compatible vault at `vault.elara.boo`, tailnet-only, apk package                                    |
+| DONE `watch` custom watchlist    | `watch.elara.boo`, tier list + queue with anilist/tmdb lookup, tailnet-only                                   |
 
 ## development
 

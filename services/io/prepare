@@ -1,5 +1,5 @@
 #!/bin/sh
-#@ build the ytdl, share, dash and torrent binaries for io. runs on this machine, not on the pi.
+#@ build the ytdl, share, dash, torrent and watch binaries for io. runs on this machine, not on the pi.
 
 set -eu
 
@@ -57,3 +57,14 @@ cd "$self/torrent-server"
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o "$self/build/torrent" .
 
 echo "  $(du -h "$self/build/torrent" | cut -f1) at build/torrent"
+
+echo "▸ watch: building the ui"
+cd "$self/watch-web"
+pnpm install --frozen-lockfile --silent
+pnpm build >/dev/null
+
+echo "▸ watch: building the binary for linux/arm64"
+cd "$self/watch-server"
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o "$self/build/watch" .
+
+echo "  $(du -h "$self/build/watch" | cut -f1) at build/watch"
