@@ -3,6 +3,7 @@
 # display name|openrc service|process name
 leda_services='
 leds|leds|-
+watchdog|watchdog|watchdog
 adguard home|adguardhome|adguardhome
 soju chat|soju|soju
 tailscale exit node|tailscale|tailscaled
@@ -12,6 +13,7 @@ spotifyd airplay bridge|pyatv-bridge|relay.sh
 
 thebe_services='
 leds|leds|-
+watchdog|watchdog|watchdog
 tailscale subnet router|tailscale|tailscaled
 unbound resolver|unbound|unbound
 adguard home|adguardhome|adguardhome
@@ -22,6 +24,7 @@ elara.boo tunnel|elara-boo-tunnel|cloudflared
 
 io_services='
 leds|leds|-
+watchdog|watchdog|watchdog
 tailscale|tailscale|tailscaled
 ytdl downloader|ytdl|ytdl
 quickshare|share|share

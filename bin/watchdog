@@ -1,0 +1,82 @@
+#!/bin/sh
+# watchdog: arms the SoC's hardware watchdog and tells the kernel to reboot
+# on panic, so a hang or crash that still has power comes back on its own
+# instead of sitting there until someone walks over and power-cycles it.
+# a clean shutdown still stops it cleanly (nowayout is off on bcm2835-wdt),
+# so this only kicks in for an actual hang, oops, or panic.
+
+set -eu
+
+case "$0" in
+*/*) self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/$(basename -- "$0")" ;;
+*) self="$(command -v "$0")" ;;
+esac
+
+DEV=${WATCHDOG_DEV:-/dev/watchdog}
+PING_S=${WATCHDOG_PING_S:-5}
+TIMEOUT_S=${WATCHDOG_TIMEOUT_S:-15}
+
+watchdog_status() {
+	if [ ! -e "$DEV" ]; then
+		echo "no watchdog device at $DEV" >&2
+		exit 1
+	fi
+	rc-service watchdog status 2>&1 || true
+	sys="/sys/class/watchdog/$(basename "$DEV")"
+	if [ -r "$sys/timeout" ]; then
+		printf 'hardware timeout=%ss bootstatus=%s\n' \
+			"$(cat "$sys/timeout" 2>/dev/null || echo '?')" \
+			"$(cat "$sys/bootstatus" 2>/dev/null || echo '?')"
+	fi
+}
+
+watchdog_install() {
+	if [ ! -e "$DEV" ]; then
+		echo "no watchdog device at $DEV, nothing to arm" >&2
+		exit 1
+	fi
+
+	echo "▸ installing control script to /usr/local/bin/watchdog"
+	install -o root -g root -m 755 "$self" /usr/local/bin/watchdog
+
+	echo "▸ pointing /etc/conf.d/watchdog at $DEV"
+	cat >/etc/conf.d/watchdog <<-EOF
+		WATCHDOG_DEV="$DEV"
+		WATCHDOG_OPTS="-t $PING_S -T $TIMEOUT_S"
+	EOF
+
+	echo "▸ enabling and starting the watchdog service"
+	rc-update add watchdog default
+	rc-service watchdog restart || rc-service watchdog start
+
+	echo "▸ rebooting ${TIMEOUT_S}s after a kernel panic too, instead of waiting out the full watchdog timeout"
+	cat >/etc/sysctl.d/99-autoreboot.conf <<-EOF
+		# a hang or oops already stops the watchdog from being pinged, which
+		# forces a hardware reset on its own, but this makes an outright
+		# panic reboot right away instead of waiting for that timeout
+		kernel.panic = $TIMEOUT_S
+		kernel.panic_on_oops = 1
+	EOF
+	sysctl -p /etc/sysctl.d/99-autoreboot.conf >/dev/null
+
+	echo "▸ watchdog install done on $(hostname)"
+}
+
+cmd=${1:-status}
+
+case "$cmd" in
+install)
+	if [ "$(id -u)" -ne 0 ]; then
+		exec sudo "$self" "$cmd"
+	fi
+	;;
+esac
+
+case "$cmd" in
+status) watchdog_status ;;
+install) watchdog_install ;;
+*)
+	echo "usage: ${0##*/} [status|install]" >&2
+	exit 2
+	;;
+esac

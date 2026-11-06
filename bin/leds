@@ -65,6 +65,16 @@ leds_state() {
 }
 
 leds_boot_check() {
+	# right after boot the clock can still be whatever fake-hwclock last
+	# saved (there's no battery RTC), hours or days off, until chrony gets
+	# a chance to step it; local.d starting after chronyd only means the
+	# daemon has launched, not that it has synced yet. wait a bit for an
+	# actual sync so a reboot landing in the night window doesn't get
+	# checked against a stale hour and skip turning the LEDs off.
+	if command -v chronyc >/dev/null 2>&1; then
+		chronyc waitsync 20 0 0 1 >/dev/null 2>&1 || true
+	fi
+
 	hour=$(date +%H)
 	case $hour in
 	23 | 00 | 01 | 02 | 03 | 04 | 05 | 06)
