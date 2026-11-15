@@ -1,9 +1,11 @@
-# generated
-services/io/*-server/dist/
-services/io/server/dist/
-services/io/build/
+# generated: each app's astro build, embedded into its Go binary
+*/server/dist/
+
+# cross-compiled binaries staged for the pis
+build/
 
 # js
+node_modules/
 **/node_modules/
 **/.astro/
 
@@ -11,6 +13,5 @@ services/io/build/
 mise.local.toml
 .ruff_cache/
 .mypy_cache/
-
-# formatter cache
+__pycache__/
 .prettier-cache/

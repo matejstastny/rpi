@@ -1,0 +1,19 @@
+{
+    "name": "@rpi/ytdl-web",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "astro dev",
+        "build": "astro build",
+        "typecheck": "astro check"
+    },
+    "dependencies": {
+        "@rpi/ui": "workspace:*",
+        "astro": "catalog:"
+    },
+    "devDependencies": {
+        "@astrojs/check": "catalog:",
+        "@types/node": "catalog:",
+        "typescript": "catalog:"
+    }
+}

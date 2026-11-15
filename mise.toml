@@ -1,9 +1,61 @@
 [tools]
 go = "1.25"
-node = "22.23.1"
+node = "24.22.2"
 pnpm = "11.9.0"
 golangci-lint = "2.11.3"
+ruff = "0.15.21"
+
+[env]
+_.path = ["{{config_root}}", "{{config_root}}/node_modules/.bin"]
+
+# dev cmds
+
+[tasks.dev]
+description = "run one app's ui and api together: mise run dev watch"
+run = "node tools/dev.ts"
+
+[tasks.apps]
+description = "list every app and host with its ports and domain"
+run = "node tools/apps.ts"
 
 [tasks.check]
-description = "Run all repository checks"
-run = "bin/check"
+description = "format, lint, typecheck, build and test; optionally one stage: check go"
+run = "node tools/check.ts"
+
+[tasks.fmt]
+description = "write formatting instead of only checking it"
+run = "node tools/check.ts --fix"
+
+[tasks.build]
+description = "cross-compile apps into build/ for the pis: mise run build watch"
+run = "node tools/build.ts"
+
+# fleet cmds
+
+[tasks.deploy]
+description = "build, push and install on a host: mise run deploy io"
+run = "pi sync --services"
+
+[tasks.sync]
+description = "push shell and bin config only, no rebuild: mise run sync io"
+run = "pi sync"
+
+[tasks.dns]
+description = "reconcile every adguard against dns.toml; add -n to only show the plan"
+run = "pi dns"
+
+[tasks.records]
+description = "the fleet's dns names, resolved, without touching a box"
+run = "pi records"
+
+[tasks.diff]
+description = "which staged files differ from what is on the hosts"
+run = "pi diff"
+
+[tasks.status]
+description = "service pulse for every reachable host"
+run = "pi status"
+
+[tasks.logs]
+description = "tail a service's logs: mise run logs io watch"
+run = "pi logs"

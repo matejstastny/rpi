@@ -1,7 +1,9 @@
-exclude = ["gazebo/build", "gazebo/log", "gazebo/install"]
+# pi and watch/import have no .py suffix, so they have to be named to be seen
+extend-include = ["pi", "watch/import"]
+
 line-length = 100
 indent-width = 4
-target-version = "py310"
+target-version = "py311"
 
 [lint]
 fixable = ["ALL"]

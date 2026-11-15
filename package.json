@@ -2,12 +2,9 @@
     "name": "rpi",
     "private": true,
     "type": "module",
-    "scripts": {
-        "dev": "node --experimental-strip-types scripts/dev.ts",
-        "ytdl:dev": "node --experimental-strip-types scripts/dev.ts ytdl",
-        "share:dev": "node --experimental-strip-types scripts/dev.ts share",
-        "dash:dev": "node --experimental-strip-types scripts/dev.ts dash",
-        "torrent:dev": "node --experimental-strip-types scripts/dev.ts torrent",
-        "watch:dev": "node --experimental-strip-types scripts/dev.ts watch"
+    "devDependencies": {
+        "prettier": "catalog:",
+        "prettier-plugin-astro": "catalog:",
+        "smol-toml": "^1.9.1"
     }
 }

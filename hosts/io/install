@@ -1,0 +1,262 @@
+#!/bin/sh
+
+set -eu
+
+as_root() {
+	printf '%s\n' "${SUDO_PASS:-}" | sudo -S -p '' "$@"
+}
+
+# a locked-down system account owning one service's state
+system_user() {
+	as_root sh -c "getent group $1 >/dev/null || addgroup -S $1"
+	as_root sh -c "getent passwd $1 >/dev/null || adduser -S -D -H -h /var/lib/$1 -s /sbin/nologin -G $1 $1"
+}
+
+# install one of our own apps: the binary from build/, its openrc unit and its
+# conf.d. a running binary cannot be overwritten, so stop first on an upgrade.
+install_app() {
+	echo "▸ $1: installing the service"
+	as_root rc-service "$1" stop >/dev/null 2>&1 || true
+	as_root install -o root -g root -m 755 "$self/$1" "/usr/local/bin/$1"
+	as_root install -o root -g root -m 755 "$self/$1.initd" "/etc/init.d/$1"
+	as_root install -o root -g root -m 644 "$self/$1.confd" "/etc/conf.d/$1"
+}
+
+# start, or restart if it is already up so a new binary actually takes over
+enable() {
+	for svc in "$@"; do
+		as_root rc-update add "$svc" default
+		as_root rc-service "$svc" start || as_root rc-service "$svc" restart
+	done
+}
+
+self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ] || [ ! -f "$self/watch" ]; then
+	echo "  ! no ytdl/share/dash/torrent/watch binary in this payload"
+	echo "    they are built on your laptop, so run: mise run deploy io"
+	exit 1
+fi
+
+echo "▸ enabling community repo"
+as_root sh -c 'grep -q "^[^#]*/community" /etc/apk/repositories || sed -i "s|^#\(.*/community\)\$|\1|" /etc/apk/repositories'
+# the mirror resolves to an ipv6 address io cannot reach often enough that a
+# wobble here must not abandon the whole install; apk add still has the index
+as_root apk update >/dev/null 2>&1 || echo "  ! apk update failed, carrying on with the cached index"
+
+echo "▸ ytdl: installing yt-dlp and ffmpeg"
+as_root apk add yt-dlp ffmpeg
+
+echo "▸ ytdl: creating system user"
+system_user ytdl
+
+# jellyfin and navidrome will want to read the same library later, so it is
+# group owned from the start rather than being chowned in a panic afterwards
+as_root sh -c 'getent group media >/dev/null || addgroup -S media'
+as_root addgroup ytdl media 2>/dev/null || true
+
+echo "▸ ytdl: creating directories"
+as_root install -d -o ytdl -g ytdl -m 755 /var/lib/ytdl /var/lib/ytdl/cache /var/log/ytdl
+as_root install -d -o ytdl -g media -m 2775 /srv/media /srv/media/video /srv/media/music
+
+install_app ytdl
+
+echo "▸ share: creating system user"
+system_user share
+
+echo "▸ share: creating directories"
+as_root install -d -o share -g share -m 755 /var/lib/share /var/lib/share/files /var/log/share
+
+install_app share
+
+echo "▸ jellyfin: installing"
+as_root apk add jellyfin jellyfin-web jellyfin-openrc
+as_root install -o root -g root -m 644 "$self/jellyfin.confd" /etc/conf.d/jellyfin
+
+echo "▸ transmission: installing"
+as_root apk add transmission-daemon transmission-daemon-openrc transmission-remote
+
+# it only writes into the library through the done script below, but that
+# still needs group write access to /srv/media/video
+as_root addgroup transmission media 2>/dev/null || true
+
+as_root install -d -o transmission -g transmission -m 700 /var/lib/transmission/config
+as_root install -d -o transmission -g transmission -m 755 /var/lib/transmission/incomplete
+
+# finished downloads land in elara's home instead of transmission's own, so
+# she can browse/scp them directly; setgid + group media so transmission (a
+# member of media, added above) can still write into it
+as_root install -d -o elara -g media -m 2775 /home/elara/jellyfin
+
+# a .torrent file dropped here gets picked up and started automatically, and
+# deleted once queued (trash-original-torrent-files in the settings below)
+as_root install -d -o elara -g media -m 2775 /home/elara/torrents
+# settings.json is only seeded on first run; transmission owns it after that,
+# so re-running install never clobbers whatever you've since changed in the ui
+if as_root test ! -f /var/lib/transmission/config/settings.json; then
+	as_root install -o transmission -g transmission -m 600 "$self/transmission-settings.json" /var/lib/transmission/config/settings.json
+fi
+
+as_root install -d -o root -g root -m 755 /usr/local/libexec
+as_root install -o root -g root -m 755 "$self/transmission-done" /usr/local/libexec/transmission-done
+
+echo "▸ torrent: creating system user"
+system_user torrent
+as_root install -d -o torrent -g torrent -m 755 /var/log/torrent
+
+install_app torrent
+
+echo "▸ node-exporter: installing"
+as_root apk add prometheus-node-exporter prometheus-node-exporter-openrc
+
+echo "▸ victoria-metrics: installing"
+as_root apk add victoria-metrics victoria-metrics-openrc
+as_root install -d -o root -g root -m 755 /etc/victoria-metrics
+as_root install -o root -g root -m 644 "$self/scrape.yml" /etc/victoria-metrics/scrape.yml
+as_root install -o root -g root -m 644 "$self/victoria-metrics.confd" /etc/conf.d/victoria-metrics
+
+# grafana was tried and replaced by dash below; on a box that still has it
+# from an earlier install, tear it down rather than leaving it running unused
+if as_root sh -c 'command -v rc-service >/dev/null && rc-service grafana status >/dev/null 2>&1'; then
+	echo "▸ grafana: removing (replaced by dash)"
+	as_root rc-service grafana stop >/dev/null 2>&1 || true
+	as_root rc-update del grafana default >/dev/null 2>&1 || true
+	as_root apk del grafana grafana-openrc grafana-frontend >/dev/null 2>&1 || true
+	as_root rm -rf /var/lib/grafana /etc/grafana.ini
+fi
+
+echo "▸ dash: creating system user"
+system_user dash
+as_root install -d -o dash -g dash -m 755 /var/log/dash
+
+install_app dash
+
+# the fleet catalog: which hosts and services the page describes, and what to
+# probe for each. the binary embeds a copy, so this only has to exist to be
+# edited without a rebuild.
+as_root install -d -o root -g root -m 755 /etc/dash
+as_root install -o root -g root -m 644 "$self/dash-catalog.json" /etc/dash/catalog.json
+
+echo "▸ watch: creating system user"
+system_user watch
+
+echo "▸ watch: creating directories"
+as_root install -d -o watch -g watch -m 755 /var/lib/watch /var/lib/watch/art /var/log/watch
+
+install_app watch
+
+# the markdown watchlist, converted by watch/import. the service
+# only reads it when /var/lib/watch/state.json does not exist yet, so copying
+# a newer seed over an in-use box is a no-op rather than a clobber.
+as_root install -d -o root -g root -m 755 /etc/watch
+as_root install -o root -g root -m 644 "$self/watch-seed.json" /etc/watch/seed.json
+
+echo "▸ vaultwarden: installing"
+as_root apk add vaultwarden vaultwarden-openrc vaultwarden-web-vault
+as_root rc-service vaultwarden stop >/dev/null 2>&1 || true
+as_root install -o root -g root -m 644 "$self/vaultwarden.confd" /etc/conf.d/vaultwarden
+
+echo "▸ caddy: creating system user"
+system_user caddy
+as_root install -d -o caddy -g caddy -m 700 /var/lib/caddy
+as_root install -d -o caddy -g caddy -m 755 /var/log/caddy
+
+if [ ! -x /usr/local/bin/caddy ]; then
+	echo "▸ caddy: fetching custom build (cloudflare DNS plugin, linux/arm64)"
+	as_root sh -c 'curl -sL -o /usr/local/bin/caddy.new "https://caddyserver.com/api/download?os=linux&arch=arm64&p=github.com/caddy-dns/cloudflare" && chmod 755 /usr/local/bin/caddy.new && mv /usr/local/bin/caddy.new /usr/local/bin/caddy'
+else
+	echo "▸ caddy: binary already present, leaving it alone"
+fi
+
+echo "▸ caddy: installing config"
+as_root install -d -o root -g caddy -m 755 /etc/caddy
+as_root install -o root -g caddy -m 640 "$self/Caddyfile" /etc/caddy/Caddyfile
+as_root install -o root -g root -m 755 "$self/caddy.initd" /etc/init.d/caddy
+as_root install -o root -g root -m 644 "$self/caddy.confd" /etc/conf.d/caddy
+
+echo "▸ enabling and starting services"
+enable ytdl share dash torrent watch
+enable jellyfin transmission-daemon node-exporter victoria-metrics vaultwarden
+
+# caddy is only started below, once its cloudflare token is known to exist
+as_root rc-update add caddy default
+
+if as_root test -f /etc/caddy/caddy.env; then
+	# "start" on an already-running service just no-ops successfully, so it
+	# never picks up a changed Caddyfile on its own; reload explicitly instead
+	if as_root rc-service caddy status >/dev/null 2>&1; then
+		as_root rc-service caddy reload
+	else
+		as_root rc-service caddy start
+	fi
+else
+	echo "  ! /etc/caddy/caddy.env is missing (Cloudflare API token)"
+	echo "    caddy will not start until you create it by hand:"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/caddy/caddy.env\"'"
+	echo "      # paste CF_API_TOKEN=<token>, Enter, Ctrl-D"
+	echo "    this is deliberately not tracked in git, it's a live secret"
+	echo "    then: ssh io 'sudo rc-service caddy start'"
+fi
+
+echo "  ! yt.elara.boo, share.elara.boo, jellyfin.elara.boo, torrent.elara.boo,"
+echo "    dash.elara.boo, vault.elara.boo and watch.elara.boo need DNS rewrites"
+echo "    in AdGuard Home"
+echo "    pointing at io's Tailscale address:"
+echo "      $(tailscale ip -4 2>/dev/null | head -1)"
+echo "  ! jellyfin needs its first-run setup wizard, can't be scripted:"
+echo "      http://jellyfin.elara.boo or http://<io's lan ip>:8096"
+echo "      add /srv/media/video as a Home Videos library, /srv/media/music as Music"
+
+echo "  ! neither torrent-server nor transmission's rpc behind it has a login"
+echo "    of its own, loopback bind + caddy's tailnet/lan gate on"
+echo "    torrent.elara.boo is the only thing guarding either of them"
+
+if as_root test ! -f /etc/dash/dash.env; then
+	echo "  ! no /etc/dash/dash.env yet"
+	echo "    adguard has no api tokens, only the web login, so dash needs the"
+	echo "    password to show the dns panel. without it that one panel stays"
+	echo "    empty and everything else works:"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/dash/dash.env\"'"
+	echo "      # paste DASH_ADGUARD_PASS=<password>, Enter, Ctrl-D"
+	echo "      ssh io 'sudo rc-service dash restart'"
+	echo "    this is deliberately not tracked in git, it's a live secret"
+fi
+
+if as_root test ! -f /etc/vaultwarden/vaultwarden.env; then
+	echo "  ! no /etc/vaultwarden/vaultwarden.env yet"
+	echo "    the admin panel at vault.elara.boo/admin needs ADMIN_TOKEN set."
+	echo "    generate an argon2 hash of a random password and paste it as the"
+	echo "    token, this is deliberately not tracked in git:"
+	echo "      ssh io 'vaultwarden hash'"
+	echo "      ssh io 'sudo install -d -m 755 /etc/vaultwarden'"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/vaultwarden/vaultwarden.env\"'"
+	echo "      # paste ADMIN_TOKEN='\$argon2id\$...', Enter, Ctrl-D"
+	echo "      ssh io 'sudo rc-service vaultwarden restart'"
+	echo "  ! signups are closed by default: flip SIGNUPS_ALLOWED to true in"
+	echo "    vaultwarden.confd, restart, create your one account, then flip it"
+	echo "    back to false and restart again"
+fi
+
+if as_root test ! -f /etc/watch/watch.env; then
+	echo "  ! no /etc/watch/watch.env yet"
+	echo "    every library already works without a key: anime falls back to"
+	echo "    kitsu, series to tvmaze, movies to imdb. tmdb is only an upgrade"
+	echo "    for richer series and movie metadata:"
+	echo "      # free key from https://www.themoviedb.org/settings/api"
+	echo "      ssh io 'sudo sh -c \"umask 077; cat > /etc/watch/watch.env\"'"
+	echo "      # paste WATCH_TMDB_KEY=<key>, Enter, Ctrl-D"
+	echo "      ssh io 'sudo rc-service watch restart'"
+	echo "    this is deliberately not tracked in git, it's a live secret"
+fi
+
+if as_root test ! -f /var/lib/ytdl/cookies.txt; then
+	echo "  ! no /var/lib/ytdl/cookies.txt yet"
+	echo "    age-restricted videos will fail with 'Sign in to confirm your age' until"
+	echo "    one is there. export cookies.txt from a logged-in browser (a 'Get"
+	echo "    cookies.txt' extension) and copy it over:"
+	echo "      scp cookies.txt io:/tmp/cookies.txt"
+	echo "      ssh io 'sudo install -o ytdl -g ytdl -m 600 /tmp/cookies.txt /var/lib/ytdl/cookies.txt && rm /tmp/cookies.txt'"
+	echo "    this is deliberately not tracked in git, it's a live session"
+fi
+
+echo "▸ services install done on $(hostname)"

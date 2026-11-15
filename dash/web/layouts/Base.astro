@@ -1,0 +1,17 @@
+---
+import Shell from "@rpi/ui/Shell.astro";
+import maple400 from "@rpi/ui/fonts/maple-400.woff2?url";
+import maple600 from "@rpi/ui/fonts/maple-600.woff2?url";
+import "../styles/app.css";
+
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<Shell title={title} preload={maple400}>
+    <link slot="head" rel="preload" href={maple600} as="font" type="font/woff2" crossorigin />
+    <slot />
+</Shell>

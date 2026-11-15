@@ -37,7 +37,9 @@
         "**/__pycache__": true,
         "**/*.egg-info": true,
         "**/.astro": true,
-        "**/.venv": true
+        "**/.venv": true,
+        "**/server/dist": true,
+        "build": true
     },
     "js/ts.experimental.useTsgo": false
 }

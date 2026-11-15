@@ -1,0 +1,28 @@
+---
+import Shell from "@rpi/ui/Shell.astro";
+import maple400 from "@rpi/ui/fonts/maple-400.woff2?url";
+import "../styles/app.css";
+
+interface Props {
+    title: string;
+    page: "download" | "recent";
+}
+
+const { title, page } = Astro.props;
+---
+
+<Shell title={title} preload={maple400}>
+    <main class="shell">
+        <header class="top">
+            <span class="mark">
+                <span class="glyph">◒</span> yt <span class="host">· io</span>
+            </span>
+            <nav>
+                <a href="/" aria-current={page === "download" ? "page" : undefined}>download</a>
+                <a href="/recent/" aria-current={page === "recent" ? "page" : undefined}>recent</a>
+            </nav>
+        </header>
+        <slot />
+        <footer>yt-dlp + ffmpeg on io · tailnet only</footer>
+    </main>
+</Shell>

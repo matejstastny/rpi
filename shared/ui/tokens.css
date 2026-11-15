@@ -1,0 +1,39 @@
+/* the palette every monospace io service shares: dotfiles/bin/palette, the
+   same tokens as elara.boo, plus io's own accent from hosts/io/host.toml.
+   an app that wants a different value overrides it in its own :root, which
+   comes after this import. */
+@import "./maple.css";
+
+:root {
+    --base: #11111b;
+    --surface: #181825;
+    --raise: #1d1d2c;
+    --overlay: #25253a;
+    --muted: #3d3d5c;
+    --dim: #9898c0;
+    --text: #dce0f4;
+    --bright: #f0f0ff;
+    --rose: #c47ab8;
+
+    --accent: #9b6bc9;
+    --accent-alt: #a855c9;
+    --accent-dim: #8a7a9e;
+
+    --green: #a6e3a1;
+    --amber: #f2cd8c;
+    --red: #f38ba8;
+
+    --gutter: clamp(20px, 5vw, 56px);
+    --gap: clamp(10px, 1.1vw, 18px);
+    --rail: 6rem;
+    --radius: 10px;
+    --rule: 1px solid var(--overlay);
+    --dash: 1px dashed var(--overlay);
+
+    color-scheme: dark;
+    font-family:
+        "Maple", ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}

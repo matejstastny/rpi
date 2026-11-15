@@ -1,0 +1,24 @@
+name = "thebe"
+glyph = "◑"
+plane = "network"
+blurb = "global, network-wide and public services"
+
+# openrc services bin/services reports on, beyond the apps in apps.toml which
+# pi appends automatically. "label|service|process", process "-" when there is
+# no single pid to look for.
+services = [
+    "leds|leds|-",
+    "watchdog|watchdog|watchdog",
+    "tailscale subnet router|tailscale|tailscaled",
+    "unbound resolver|unbound|unbound",
+    "adguard home|adguardhome|adguardhome",
+    "caddy proxy|caddy|caddy",
+    "ntfy|ntfy|ntfy",
+    "elara.boo tunnel|elara-boo-tunnel|cloudflared",
+]
+
+[colors]
+accent = "#d9995e"
+bright = "#f2c18f"
+alt = "#c9705e"
+dim = "#a08972"

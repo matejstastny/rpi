@@ -1,0 +1,23 @@
+name = "leda"
+glyph = "◐"
+plane = "service"
+blurb = "personal local services"
+
+# openrc services bin/services reports on, beyond the apps in apps.toml which
+# pi appends automatically. "label|service|process", process "-" when there is
+# no single pid to look for.
+services = [
+    "leds|leds|-",
+    "watchdog|watchdog|watchdog",
+    "adguard home|adguardhome|adguardhome",
+    "soju chat|soju|soju",
+    "tailscale exit node|tailscale|tailscaled",
+    "spotifyd|spotifyd|spotifyd",
+    "spotifyd airplay bridge|pyatv-bridge|relay.sh",
+]
+
+[colors]
+accent = "#5fb3a3"
+bright = "#8fd6c6"
+alt = "#6f9fc9"
+dim = "#7d9a94"

@@ -1,0 +1,29 @@
+---
+// the html shell every io service renders. each app's own Base.astro wraps
+// this and adds its chrome, so the head stays in one place.
+//
+// the font url is passed in rather than imported here: a Shell that imported
+// every face would make each app ship the ones it does not use.
+interface Props {
+    title: string;
+    preload?: string;
+}
+
+const { title, preload } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="robots" content="noindex, nofollow" />
+        <title>{title}</title>
+        {preload && <link rel="preload" href={preload} as="font" type="font/woff2" crossorigin />}
+        <slot name="head" />
+    </head>
+    <body>
+        <slot />
+    </body>
+</html>

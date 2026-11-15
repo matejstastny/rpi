@@ -1,0 +1,14 @@
+packages:
+    - shared/ui
+    - "*/web"
+
+catalog:
+    astro: ^7.3.4
+    "@astrojs/check": ^0.9.10
+    typescript: ^5.9.3
+    "@types/node": ^24.10.1
+    prettier: ^3.7.4
+    prettier-plugin-astro: ^0.14.1
+
+allowBuilds:
+    esbuild: true

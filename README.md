@@ -34,15 +34,63 @@
 | DONE `vaultwarden`               | bitwarden-compatible vault at `vault.elara.boo`, tailnet-only, apk package                                    |
 | DONE `watch` custom watchlist    | `watch.elara.boo`, tier list + queue with anilist/tmdb lookup, tailnet-only                                   |
 
+## layout
+
+each app is one directory at the root: a Go api in `server/`, an Astro ui in
+`web/` that the api embeds, and its openrc unit next to them. `apps.toml` is
+the only place that knows an app exists, and everything else reads it.
+
+```
+ytdl/ share/ dash/ torrent/ watch/   the apps
+apps.toml                            ports, domains, which host runs what
+dns.toml                             every name the fleet resolves
+hosts/<name>/                        one pi: host.toml, Caddyfile, install
+internal/                            Go helpers the apis share
+shared/ui/                           palette, fonts, html shell, fetch glue
+shell/ bin/                          what gets pushed to the pis
+cli/                                 the fleet cli, run as `pi`
+tools/                               dev, build and check, run on this machine
+pi                                   the entrypoint for cli/
+```
+
 ## development
 
-[mise](https://mise.jdx.dev/) installs and selects this repository's Go, Node,
-pnpm, and Go linter versions. Install mise once, then run:
+[mise](https://mise.jdx.dev/) pins the Go, Node, pnpm, ruff and golangci-lint
+versions and is the single command surface:
 
 ```sh
 mise install
-mise run check
+mise run apps              # ports and domains for everything
+mise run dev watch         # one app's ui and api together
+mise run check             # everything; or one stage: check go
+mise run fmt               # write the formatting
+mise run build watch       # cross-compile just that app for the pis
 ```
 
-`mise run check` verifies formatting, shell syntax, Astro typechecking and
-builds, Go linting, `go vet`, and Go tests.
+## the fleet
+
+`pi` drives the three pis over tailscale. the mise tasks are thin wrappers, so
+either spelling works.
+
+```sh
+pi records                 # every name, resolved, without touching a box
+pi dns --check             # what would change in adguard; -n writes nothing
+pi dns                     # reconcile both resolvers against dns.toml
+pi diff io                 # which staged files differ from the box
+pi sync io --services      # build the apps, push, install
+pi status                  # service pulse for every pi
+pi logs io watch -f        # follow a service's log
+pi ssh io 'rc-service caddy status'
+```
+
+### dns
+
+`dns.toml` is the only place a name is written down. the app names come from
+`apps.toml` pointed at whichever host runs them, and every address comes from
+`tailscale status`, so there is no ip in git to go stale. `pi dns` reconciles
+both adguards through adguard's own api rather than editing the yaml it owns,
+and only ever touches names inside the declared zone.
+
+it needs adguard's web password, which is not in git. either export
+`PI_ADGUARD_PASS`, or add `# adguardpsw: ...` above a host in your
+remote-hosts file, the same convention as `# rootpsw:`.

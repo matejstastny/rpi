@@ -1,0 +1,77 @@
+# every app here is one Go api with its Astro ui embedded in the binary,
+# reverse proxied by caddy on its host. this file is the only place that
+# knows an app exists: tools/dev.ts runs one locally, tools/build.ts
+# cross-compiles it, tools/check.ts checks it, and pi ships and installs it.
+#
+# name     directory at the repo root, and the openrc service name
+# api      loopback port the Go service binds, in dev and on the host alike
+# web      port the astro dev server uses locally, nothing on the host
+# env      local-only overrides, so dev never writes to /var/lib
+# needs    printed by `mise run dev` when the app wants something installed
+# files    extra payload beyond <name>.initd and <name>.confd
+
+[[app]]
+name = "ytdl"
+label = "youtube downloader"
+host = "io"
+domain = "yt.elara.boo"
+api = 8090
+web = 4321
+needs = "yt-dlp and ffmpeg to download media"
+
+[app.env]
+YTDL_CACHE_DIR = "/tmp/rpi-ytdl/cache"
+YTDL_VIDEO_DIR = "/tmp/rpi-ytdl/video"
+YTDL_AUDIO_DIR = "/tmp/rpi-ytdl/audio"
+
+[[app]]
+name = "share"
+label = "quick share"
+host = "io"
+domain = "share.elara.boo"
+api = 8091
+web = 4322
+
+[app.env]
+SHARE_DIR = "/tmp/rpi-share"
+
+[[app]]
+name = "dash"
+label = "fleet dashboard"
+host = "io"
+domain = "dash.elara.boo"
+api = 8092
+web = 4323
+needs = "VictoriaMetrics, Transmission, Jellyfin and Tailscale for live data"
+
+[app.env]
+DASH_CATALOG = "./catalog.json"
+
+[[app.files]]
+from = "server/catalog.json"
+as = "dash-catalog.json"
+
+[[app]]
+name = "torrent"
+label = "transmission ui"
+host = "io"
+domain = "torrent.elara.boo"
+api = 8093
+web = 4324
+needs = "Transmission RPC for live data"
+
+[[app]]
+name = "watch"
+label = "watchlist"
+host = "io"
+domain = "watch.elara.boo"
+api = 8095
+web = 4325
+
+[app.env]
+WATCH_DIR = "/tmp/rpi-watch"
+WATCH_SEED = "../seed.json"
+
+[[app.files]]
+from = "seed.json"
+as = "watch-seed.json"

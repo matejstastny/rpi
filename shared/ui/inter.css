@@ -1,0 +1,9 @@
+/* Inter variable, the one sans face on the fleet. watch uses it because
+   posters next to a monospace grid looked wrong. OFL 1.1. */
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/inter.woff2") format("woff2-variations");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}

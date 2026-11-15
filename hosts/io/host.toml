@@ -1,0 +1,26 @@
+# one description of this pi. pi renders the starship palette, the zsh
+# MOON_* exports and bin/services' table from it, so a colour or a service
+# is written once rather than in three places.
+name = "io"
+glyph = "◒"
+plane = "storage"
+blurb = "storage heavy services"
+
+# openrc services bin/services reports on, beyond the apps in apps.toml which
+# pi appends automatically. "label|service|process", process "-" when there is
+# no single pid to look for.
+services = [
+    "leds|leds|-",
+    "watchdog|watchdog|watchdog",
+    "tailscale|tailscale|tailscaled",
+    "jellyfin|jellyfin|jellyfin",
+    "transmission|transmission-daemon|transmission-daemon",
+    "vaultwarden|vaultwarden|vaultwarden",
+    "caddy proxy|caddy|caddy",
+]
+
+[colors]
+accent = "#9b6bc9"
+bright = "#c9a8e8"
+alt = "#a855c9"
+dim = "#8a7a9e"

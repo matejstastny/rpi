@@ -1,0 +1,18 @@
+/* Maple Mono, the same subset the terminal and elara.boo use. OFL 1.1.
+   the urls are relative so vite emits one fingerprinted copy per app rather
+   than each app carrying the file in public/. */
+@font-face {
+    font-family: "Maple";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("./fonts/maple-400.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Maple";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("./fonts/maple-600.woff2") format("woff2");
+}

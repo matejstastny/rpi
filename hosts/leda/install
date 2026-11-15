@@ -1,0 +1,40 @@
+#!/bin/sh
+
+set -eu
+
+as_root() {
+	printf '%s\n' "${SUDO_PASS:-}" | sudo -S -p '' "$@"
+}
+
+self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+echo "▸ enabling community repo"
+as_root sh -c 'grep -q "^[^#]*/community" /etc/apk/repositories || sed -i "s|^#\(.*/community\)\$|\1|" /etc/apk/repositories'
+as_root apk update >/dev/null
+
+echo "▸ adguardhome: installing package"
+as_root apk add adguardhome adguardhome-openrc
+
+# the seed is shared by every resolver on the fleet and only lands on a box
+# that has never had adguard before; after that adguard owns the file. the
+# upstreams and the fleet's rewrites are left empty here and reconciled over
+# adguard's api by `pi dns`, so no sed ever edits a live config again.
+if as_root test ! -f /var/lib/adguardhome/AdGuardHome.yaml; then
+	echo "▸ adguardhome: seeding config (first install only)"
+	as_root install -d -o adguardhome -g adguardhome -m 755 /var/lib/adguardhome
+	as_root install -o adguardhome -g adguardhome -m 640 "$self/adguardhome.yaml" /var/lib/adguardhome/AdGuardHome.yaml
+	echo "  ! set the web login at http://$(hostname):3000, then run: pi dns"
+else
+	echo "▸ adguardhome: config present, leaving live state to \`pi dns\`"
+fi
+
+echo "▸ node-exporter: installing"
+as_root apk add prometheus-node-exporter prometheus-node-exporter-openrc
+
+echo "▸ enabling and starting services"
+as_root rc-update add adguardhome default
+as_root rc-update add node-exporter default
+as_root rc-service adguardhome restart || as_root rc-service adguardhome start
+as_root rc-service node-exporter start || as_root rc-service node-exporter restart
+
+echo "▸ services install done on $(hostname)"
