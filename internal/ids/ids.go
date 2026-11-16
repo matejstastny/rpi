@@ -1,5 +1,5 @@
-// Package ids makes the opaque hex handles the apis hand out for jobs, files
-// and watchlist entries.
+// Package ids makes the opaque hex handles the apis hand out for jobs and
+// files.
 package ids
 
 import (

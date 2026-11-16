@@ -15,7 +15,6 @@ services = [
     "tailscale|tailscale|tailscaled",
     "jellyfin|jellyfin|jellyfin",
     "transmission|transmission-daemon|transmission-daemon",
-    "vaultwarden|vaultwarden|vaultwarden",
     "caddy proxy|caddy|caddy",
 ]
 

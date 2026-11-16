@@ -1,38 +1,46 @@
-**thebe = network plane** Global services, network-wide services, public services
+<h1 style="centered">rpi</h1>
 
-|                                 |                                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| DONE `adguardhome`              | primary resolver                                                                                       |
-| DONE `unbound`                  | recursive resolver behind AGH, so no upstream sees your query log                                      |
-| DONE `tailscale`                | subnet router advertising `192.168.250.0/24`, full LAN from anywhere                                   |
-| DONE `caddy`                    | reverse proxy for everything on both pis, real names instead of `:3000`                                |
-| DONE `ntfy`                     | push target for your scripts; same shape as your `notify-send "✦ topic"` convention, but on your phone |
-| DONE `prometheus-node-exporter` | metrics scrape target for this box, ships to `victoria-metrics` on io                                  |
+config and a fleet cli for three raspberry pis, connected over tailscale
 
-**leda = service plane** Personal local services
+|             |                                          |
+| ----------- | ---------------------------------------- |
+| ◑ **thebe** | global, network-wide and public services |
+| ◐ **leda**  | personal local services                  |
+| ◒ **io**    | storage heavy services                   |
 
-|                                  |                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| DONE `adguardhome`               | secondary resolver, independently forwards over Quad9 DoH                |
-| DONE `soju`                      | persistent IRC bouncer (saw the irc commit, this is the obvious fit)     |
-| DONE `prometheus-node-exporter`  | metrics scrape target for this box, ships to `victoria-metrics` on io    |
-| DONE `tailscale`                 | exit node, kept off thebe so bulk traffic doesn't compete with DNS       |
-| DONE `spotifyd` + `pyatv-bridge` | spotify connect device that relays audio via airplay to the homepod mini |
+### ◑ [thebe](<https://en.wikipedia.org/wiki/Thebe_(moon)>)
 
-**io = storage plane** Storage heavy services
+|                            |                                                                             |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `adguardhome`              | primary resolver                                                            |
+| `unbound`                  | recursive resolver behind AGH, keeps the query log off the upstream         |
+| `tailscale`                | subnet router advertising `192.168.250.0/24`, full LAN from anywhere        |
+| `caddy`                    | reverse proxy for everything on thebe and io, real names instead of `:3000` |
+| `ntfy`                     | push target for scripts, same idea as `notify-send` but on your phone       |
+| `cloudflared`              | tunnels `elara.boo` out, no public port open anywhere                       |
+| `prometheus-node-exporter` | metrics scrape target for this box, ships to `victoria-metrics` on io       |
 
-|                                  |                                                                                                               |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| DONE `tailscale`                 | joined the tailnet                                                                                            |
-| DONE `yt-dlp` + custom ui        | `yt.elara.boo`, mp4/mp3 with a web ui, 20 GB cache + `/srv/media` library, tailnet-only                       |
-| DONE `share` custom quickshare   | `share.elara.boo`, upload via web ui or the `share` script, keeps the last 10 files, tailnet-only             |
-| DONE `caddy`                     | reverse proxy + DNS-01 cert for `yt.elara.boo`, so bulk downloads never transit thebe                         |
-| DONE `jellyfin`                  | media server at `jellyfin.elara.boo`, video side of the yt-dlp output, no hw transcode                        |
-| DONE `transmission-daemon`       | torrent client at `torrent.elara.boo`, `script-torrent-done` hardlinks finished video into jellyfin's library |
-| DONE `prometheus-node-exporter`  | metrics scrape target for io itself, scraped over loopback                                                    |
-| DONE `victoria-metrics` + `dash` | custom go+astro fleet dashboard at `dash.elara.boo`                                                           |
-| DONE `vaultwarden`               | bitwarden-compatible vault at `vault.elara.boo`, tailnet-only, apk package                                    |
-| DONE `watch` custom watchlist    | `watch.elara.boo`, tier list + queue with anilist/tmdb lookup, tailnet-only                                   |
+### ◐ [leda](<https://en.wikipedia.org/wiki/Leda_(moon)>)
+
+|                            |                                                                       |
+| -------------------------- | --------------------------------------------------------------------- |
+| `adguardhome`              | secondary resolver, independently forwards over Quad9 DoH             |
+| `soju`                     | persistent IRC bouncer                                                |
+| `tailscale`                | exit node, kept off thebe so bulk traffic doesn't compete with dns    |
+| `prometheus-node-exporter` | metrics scrape target for this box, ships to `victoria-metrics` on io |
+
+### ◒ [io](<https://en.wikipedia.org/wiki/Io_(moon)>)
+
+|                             |                                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `tailscale`                 | joined the tailnet                                                                                          |
+| `ytdl`                      | `yt.elara.boo`, mp4/mp3 with a web ui, 20 GB cache + `/srv/media` library, tailnet-only                     |
+| `share`                     | `share.elara.boo`, upload via web ui or the `share` script, keeps the last 10 files, tailnet-only           |
+| `caddy`                     | reverse proxy + DNS-01 cert for everything here, so bulk downloads never transit thebe                      |
+| `jellyfin`                  | media server at `jellyfin.elara.boo`, video side of the yt-dlp output, no hw transcode                      |
+| `transmission-daemon`       | torrent client at `torrent.elara.boo`; `transmission-done` hardlinks finished video into jellyfin's library |
+| `prometheus-node-exporter`  | metrics scrape target for io itself, scraped over loopback                                                  |
+| `victoria-metrics` + `dash` | custom Go + Astro fleet dashboard at `dash.elara.boo`                                                       |
 
 ## layout
 
@@ -41,16 +49,16 @@ each app is one directory at the root: a Go api in `server/`, an Astro ui in
 the only place that knows an app exists, and everything else reads it.
 
 ```
-ytdl/ share/ dash/ torrent/ watch/   the apps
-apps.toml                            ports, domains, which host runs what
-dns.toml                             every name the fleet resolves
-hosts/<name>/                        one pi: host.toml, Caddyfile, install
-internal/                            Go helpers the apis share
-shared/ui/                           palette, fonts, html shell, fetch glue
-shell/ bin/                          what gets pushed to the pis
-cli/                                 the fleet cli, run as `pi`
-tools/                               dev, build and check, run on this machine
-pi                                   the entrypoint for cli/
+ytdl/ share/ dash/ torrent/   the apps
+apps.toml                    ports, domains, which host runs what
+dns.toml                     every name the fleet resolves
+hosts/<name>/                one pi: host.toml, Caddyfile, install
+internal/                    Go helpers the apis share
+shared/ui/                   palette, fonts, html shell, fetch glue
+shell/ bin/                  what gets pushed to the pis
+cli/                         the fleet cli, run as `pi`
+tools/                       dev, build and check, run on this machine
+pi                           the entrypoint for cli/
 ```
 
 ## development
@@ -61,10 +69,10 @@ versions and is the single command surface:
 ```sh
 mise install
 mise run apps              # ports and domains for everything
-mise run dev watch         # one app's ui and api together
+mise run dev ytdl          # one app's ui and api together
 mise run check             # everything; or one stage: check go
 mise run fmt               # write the formatting
-mise run build watch       # cross-compile just that app for the pis
+mise run build ytdl        # cross-compile just that app for the pis
 ```
 
 ## the fleet
@@ -73,13 +81,13 @@ mise run build watch       # cross-compile just that app for the pis
 either spelling works.
 
 ```sh
-pi records                 # every name, resolved, without touching a box
-pi dns --check             # what would change in adguard; -n writes nothing
-pi dns                     # reconcile both resolvers against dns.toml
-pi diff io                 # which staged files differ from the box
-pi sync io --services      # build the apps, push, install
-pi status                  # service pulse for every pi
-pi logs io watch -f        # follow a service's log
+pi records              # every name, resolved, without touching a box
+pi dns --check          # what would change in adguard; -n writes nothing
+pi dns                  # reconcile both resolvers against dns.toml
+pi diff io              # which staged files differ from the box
+pi sync io --services   # build the apps, push, install
+pi status               # service pulse for every pi
+pi logs io ytdl -f      # follow a service's log
 pi ssh io 'rc-service caddy status'
 ```
 

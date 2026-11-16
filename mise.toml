@@ -11,7 +11,7 @@ _.path = ["{{config_root}}", "{{config_root}}/node_modules/.bin"]
 # dev cmds
 
 [tasks.dev]
-description = "run one app's ui and api together: mise run dev watch"
+description = "run one app's ui and api together: mise run dev ytdl"
 run = "node tools/dev.ts"
 
 [tasks.apps]
@@ -27,7 +27,7 @@ description = "write formatting instead of only checking it"
 run = "node tools/check.ts --fix"
 
 [tasks.build]
-description = "cross-compile apps into build/ for the pis: mise run build watch"
+description = "cross-compile apps into build/ for the pis: mise run build ytdl"
 run = "node tools/build.ts"
 
 # fleet cmds
@@ -57,5 +57,5 @@ description = "service pulse for every reachable host"
 run = "pi status"
 
 [tasks.logs]
-description = "tail a service's logs: mise run logs io watch"
+description = "tail a service's logs: mise run logs io ytdl"
 run = "pi logs"

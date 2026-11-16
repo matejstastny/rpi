@@ -1,5 +1,5 @@
-# pi and watch/import have no .py suffix, so they have to be named to be seen
-extend-include = ["pi", "watch/import"]
+# pi has no .py suffix, so it has to be named to be seen
+extend-include = ["pi"]
 
 line-length = 100
 indent-width = 4

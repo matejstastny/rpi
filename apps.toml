@@ -59,19 +59,3 @@ domain = "torrent.elara.boo"
 api = 8093
 web = 4324
 needs = "Transmission RPC for live data"
-
-[[app]]
-name = "watch"
-label = "watchlist"
-host = "io"
-domain = "watch.elara.boo"
-api = 8095
-web = 4325
-
-[app.env]
-WATCH_DIR = "/tmp/rpi-watch"
-WATCH_SEED = "../seed.json"
-
-[[app.files]]
-from = "seed.json"
-as = "watch-seed.json"

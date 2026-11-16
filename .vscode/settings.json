@@ -41,5 +41,6 @@
         "**/server/dist": true,
         "build": true
     },
+
     "js/ts.experimental.useTsgo": false
 }

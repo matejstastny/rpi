@@ -1,36 +1,15 @@
-# the fleet's DNS in one place. `pi dns` reconciles every adguard instance
-# against this file through adguard's own api, so a rewrite is never typed into
-# a web ui, sed'd into a yaml file on a box, or pulled back out of one.
-#
-# there are no ip addresses here on purpose. a name points at a host, and that
-# host's address comes from `tailscale status`, so a box that gets a new tailnet
-# address fixes itself on the next `pi dns` instead of going stale in git.
-
 zone = "elara.boo"
 
-# adguard's web login. the password is a live secret and is never in git: it
-# comes from $PI_ADGUARD_PASS, or an "# adguardpsw: ..." line above the host in
-# your remote-hosts file, the same convention as "# rootpsw:".
 user = "elara"
 port = 3000
 
-# only used to resolve the DoH upstream's own hostname. quad9 on purpose: it is
-# the same operator as the upstream, so there is one fewer party in the path.
 bootstrap = ["9.9.9.10", "149.112.112.10", "2620:fe::10", "2620:fe::fe:10"]
 
-# names that are not one of the apps in apps.toml. the app names (yt, share,
-# dash, torrent, watch) are derived from there and pointed at whichever host
-# runs them, so they are deliberately absent here.
 [records]
 dns = "thebe"
 ntfy = "thebe"
 jellyfin = "io"
-vault = "io"
 
-# which hosts run an adguard, and what each one forwards to. thebe goes through
-# its own unbound on loopback so no upstream ever sees the query log. leda
-# forwards over quad9 DoH independently, so thebe going down is one resolver
-# short rather than the whole house losing dns.
 [resolvers]
 thebe = ["127.0.0.1:5335"]
 leda = ["https://dns10.quad9.net/dns-query"]

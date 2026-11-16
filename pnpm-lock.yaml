@@ -102,25 +102,6 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  watch/web:
-    dependencies:
-      '@rpi/ui':
-        specifier: workspace:*
-        version: link:../../shared/ui
-      astro:
-        specifier: 'catalog:'
-        version: 7.4.4(@types/node@24.19.2)(yaml@2.9.1)
-    devDependencies:
-      '@astrojs/check':
-        specifier: 'catalog:'
-        version: 0.9.12(@emnapi/runtime@1.11.3)(prettier-plugin-astro@0.14.1)(prettier@3.9.10)(typescript@5.9.3)
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.19.2
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
   ytdl/web:
     dependencies:
       '@rpi/ui':

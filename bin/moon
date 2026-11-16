@@ -1,19 +1,29 @@
 #!/bin/sh
+#@ status
 
 set -eu
 
 thermal=/sys/class/thermal/thermal_zone0/temp
 
 temp() {
-	[ -r "$thermal" ] || { echo "no thermal zone" >&2; return 1; }
+	[ -r "$thermal" ] || {
+		echo "no thermal zone" >&2
+		return 1
+	}
 	awk '{printf "%.1f°C\n", $1/1000}' "$thermal"
 }
 
 throttle() {
-	command -v vcgencmd >/dev/null || { echo "vcgencmd not installed" >&2; return 1; }
+	command -v vcgencmd >/dev/null || {
+		echo "vcgencmd not installed" >&2
+		return 1
+	}
 	bits=$(vcgencmd get_throttled | cut -d= -f2)
 	value=$((bits))
-	[ "$value" -eq 0 ] && { echo "clear"; return 0; }
+	[ "$value" -eq 0 ] && {
+		echo "clear"
+		return 0
+	}
 	[ $((value & 0x1)) -ne 0 ] && echo "under-voltage now"
 	[ $((value & 0x2)) -ne 0 ] && echo "arm frequency capped now"
 	[ $((value & 0x4)) -ne 0 ] && echo "throttled now"
@@ -36,8 +46,11 @@ status() {
 }
 
 case "${1:-status}" in
-	temp) temp ;;
-	throttle) throttle ;;
-	status) status ;;
-	*) echo "usage: ${0##*/} [status|temp|throttle]" >&2; exit 2 ;;
+temp) temp ;;
+throttle) throttle ;;
+status) status ;;
+*)
+	echo "usage: ${0##*/} [status|temp|throttle]" >&2
+	exit 2
+	;;
 esac

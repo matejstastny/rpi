@@ -1,7 +1,5 @@
 #!/bin/sh
-
-# power and thermal monitor. by default it pins every core first, so a weak
-# supply can be told apart from a hot case; -m just watches.
+#@ power and thermal monitor
 
 set -eu
 

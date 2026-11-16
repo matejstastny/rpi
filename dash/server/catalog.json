@@ -98,17 +98,6 @@
             "probe": "tcp://leda:6667"
         },
         {
-            "name": "spotifyd",
-            "host": "leda",
-            "blurb": "spotify connect endpoint",
-            "probe": "tcp://leda:45005"
-        },
-        {
-            "name": "pyatv bridge",
-            "host": "leda",
-            "blurb": "relays spotifyd audio to the homepod"
-        },
-        {
             "name": "tailscale exit",
             "host": "leda",
             "blurb": "exit node, kept off thebe so dns never competes"

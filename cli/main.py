@@ -15,7 +15,7 @@ EPILOG = """examples:
   pi diff io                 which staged files differ from the box
   pi sync io --services      build the apps, push, install
   pi status                  service pulse for every pi
-  pi logs io watch -f        follow a service's log
+  pi logs io ytdl -f         follow a service's log
   pi ssh io 'rc-service caddy status'
 """
 

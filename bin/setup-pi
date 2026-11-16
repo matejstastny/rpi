@@ -8,12 +8,12 @@ as_root() {
 	printf '%s\n' "${SUDO_PASS:-}" | sudo -S -p '' "$@"
 }
 
-echo "▸ enabling community repo"
+echo "enabling community repo"
 if ! grep -q '^[^#]*/community' /etc/apk/repositories; then
 	as_root sed -i 's|^#\(.*/community\)$|\1|' /etc/apk/repositories
 fi
 
-echo "▸ installing packages"
+echo "installing packages"
 as_root apk update >/dev/null
 # shellcheck disable=SC2086
 as_root apk add $packages
@@ -23,7 +23,7 @@ zsh_path=$(command -v zsh)
 current_shell=$(getent passwd "$user" | cut -d: -f7)
 
 if [ "$current_shell" != "$zsh_path" ]; then
-	echo "▸ setting login shell to $zsh_path"
+	echo "setting login shell to $zsh_path"
 	if ! grep -qx "$zsh_path" /etc/shells 2>/dev/null; then
 		printf '%s\n' "$zsh_path" | as_root tee -a /etc/shells >/dev/null
 	fi
@@ -34,7 +34,7 @@ if [ "$current_shell" != "$zsh_path" ]; then
 		exit 1
 	fi
 else
-	echo "▸ login shell already $zsh_path"
+	echo "login shell already $zsh_path"
 fi
 
-echo "▸ bootstrap done on $(hostname)"
+echo "bootstrap done on $(hostname)"

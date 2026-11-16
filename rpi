@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#@ open my raspberry pi development workspace
+#@ open workspace
 
 if [[ -z ${TMUX:-} ]]; then
 	printf 'rpi must be run from inside tmux\n' >&2

@@ -1,9 +1,5 @@
 #!/bin/sh
-# watchdog: arms the SoC's hardware watchdog and tells the kernel to reboot
-# on panic, so a hang or crash that still has power comes back on its own
-# instead of sitting there until someone walks over and power-cycles it.
-# a clean shutdown still stops it cleanly (nowayout is off on bcm2835-wdt),
-# so this only kicks in for an actual hang, oops, or panic.
+#@ reboots on kernel panic
 
 set -eu
 
