@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "@rpi/ui/atkinson.css";
+@import "@rpi/ui/maple.css";
+
+/* the fleet palette, kept from shared/ui/tokens.css so this app still looks
+   like it belongs to the same house, but spent on a designed surface rather
+   than a terminal one: the greys carry the layout and the purple is only ever
+   the thing you are meant to look at. */
+@theme {
+    --color-base: #0e0e17;
+    --color-surface: #14141f;
+    --color-raise: #1a1a28;
+    --color-overlay: #212133;
+    --color-line: #26263a;
+    --color-edge: #32324c;
+    --color-muted: #3d3d5c;
+    --color-dim: #8f8fb4;
+    --color-soft: #b4b4d4;
+    --color-text: #dce0f4;
+    --color-bright: #f4f4ff;
+
+    --color-accent: #9b6bc9;
+    --color-accent-alt: #a855c9;
+    --color-accent-soft: #c9a8e8;
+    --color-rose: #c47ab8;
+
+    --color-green: #a6e3a1;
+    --color-amber: #f2cd8c;
+    --color-red: #f38ba8;
+
+    --font-sans: "Atkinson", "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "Maple", ui-monospace, "Cascadia Code", Menlo, monospace;
+
+    --radius-card: 14px;
+
+    --animate-pop: pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    --animate-rise: rise 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    --animate-sweep: sweep 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes sweep {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@layer base {
+    * {
+        scrollbar-color: var(--color-edge) transparent;
+        scrollbar-width: thin;
+    }
+
+    ::-webkit-scrollbar {
+        width: 9px;
+        height: 9px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-line);
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-edge);
+        background-clip: content-box;
+    }
+
+    html {
+        color-scheme: dark;
+        background: var(--color-base);
+    }
+
+    body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--color-base);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        font-synthesis: none;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    ::selection {
+        background: color-mix(in oklab, var(--color-accent) 45%, transparent);
+        color: var(--color-bright);
+    }
+
+    :focus-visible {
+        outline: 2px solid color-mix(in oklab, var(--color-accent) 70%, transparent);
+        outline-offset: 2px;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+        font: inherit;
+        color: inherit;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(0.7) sepia(1) saturate(3) hue-rotate(230deg);
+        cursor: pointer;
+    }
+}
+
+/* two soft purple blooms and a drifting dot grid, the only decoration in the
+   app. it sits behind everything and never moves with the content. */
+.aurora {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.aurora::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 50% 42% at 12% -6%, rgb(155 107 201 / 22%), transparent 65%),
+        radial-gradient(ellipse 46% 38% at 88% 4%, rgb(168 85 201 / 14%), transparent 62%),
+        radial-gradient(ellipse 70% 50% at 50% 108%, rgb(196 122 184 / 8%), transparent 70%);
+}
+
+.aurora::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgb(220 224 244 / 4%) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+    animation: drift 60s linear infinite;
+}
+
+@keyframes drift {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 60px 60px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

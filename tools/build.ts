@@ -1,6 +1,6 @@
 // cross-compile one or more apps for the pis, as `mise run build [app...]`.
-// each binary embeds its own astro build, so a host needs neither node nor a
-// static root. pi reads build/ when syncing with --services.
+// each binary embeds its own frontend build, so a host needs neither node nor
+// a static root. pi reads build/ when syncing with --services.
 import { mkdirSync, rmSync, copyFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { apps, root, serverDir, webDir, type App } from "./manifest.ts";
@@ -15,7 +15,7 @@ const target = { GOOS: "linux", GOARCH: "arm64", CGO_ENABLED: "0" };
 
 async function build(a: App) {
     step(`${a.name}: ui`);
-    await run("pnpm", ["exec", "astro", "build"], { cwd: webDir(a), quiet: true });
+    await run("pnpm", ["run", "build"], { cwd: webDir(a), quiet: true });
 
     step(`${a.name}: binary for ${target.GOOS}/${target.GOARCH}`);
     const out = join(buildDir, a.name);

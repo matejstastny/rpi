@@ -1,4 +1,4 @@
-// run one app's astro dev server and its Go api together, as `mise run dev <app>`.
+// run one app's dev server and its Go api together, as `mise run dev <app>`.
 import { existsSync } from "node:fs";
 import { createServer } from "node:net";
 import { createInterface } from "node:readline/promises";
@@ -69,14 +69,15 @@ async function main() {
 
     // the Go binary embeds web/dist, so it has to exist before `go run` compiles
     console.log(muted("building the embedded frontend once…"));
-    await run("pnpm", ["exec", "astro", "build"], { cwd: web, quiet: true });
+    await run("pnpm", ["run", "build"], { cwd: web, quiet: true });
 
     console.log(`\n${green("ready")} ctrl-c stops both.\n`);
 
     const env = { RPI_WEB_PORT: String(a.web), RPI_API_URL: apiURL(a) };
-    // astro backgrounds itself when it detects a coding agent, so opt out and own the process
+    // each app's package.json owns how its frontend starts; astro backgrounds
+    // itself when it detects a coding agent, which its own script opts out of
     const children = [
-        start("pnpm", ["exec", "astro", "dev", "--ignore-lock"], { cwd: web, tag: "web", env }),
+        start("pnpm", ["run", "dev"], { cwd: web, tag: "web", env }),
         start("go", ["run", "."], { cwd: server, tag: "api", env: a.env })
     ];
 

@@ -4,11 +4,33 @@ packages:
 
 catalog:
     astro: ^7.3.4
+    react: ^19.3.1
+    react-dom: ^19.3.1
+    "@types/react": ^19.3.0
+    "@types/react-dom": ^19.3.0
+    vite: ^8.3.8
+    "@vitejs/plugin-react": ^6.3.0
+    tailwindcss: ^4.3.5
+    "@tailwindcss/vite": ^4.3.5
+    lucide-react: ^1.73.0
+    canvas-confetti: ^1.9.4
+    "@types/canvas-confetti": ^1.9.0
+    clsx: ^2.1.1
+    tailwind-merge: ^3.7.0
+    sonner: ^2.0.8
     "@astrojs/check": ^0.9.10
     typescript: ^5.9.3
     "@types/node": ^24.10.1
     prettier: ^3.7.4
     prettier-plugin-astro: ^0.14.1
+
+# rolldown, under vite 8, asks for a prerelease @emnapi/runtime for its wasm
+# fallback binding. that binding is never used on this machine, but letting the
+# prerelease into the tree breaks astro check in the other apps, so the stable
+# line is pinned for everyone.
+overrides:
+    "@emnapi/runtime": 1.11.3
+    "@emnapi/core": 1.11.3
 
 allowBuilds:
     esbuild: true

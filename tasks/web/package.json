@@ -1,0 +1,31 @@
+{
+    "name": "@rpi/tasks-web",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@rpi/ui": "workspace:*",
+        "canvas-confetti": "catalog:",
+        "clsx": "catalog:",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "sonner": "catalog:",
+        "tailwind-merge": "catalog:"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "catalog:",
+        "@types/canvas-confetti": "catalog:",
+        "@types/node": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:"
+    }
+}

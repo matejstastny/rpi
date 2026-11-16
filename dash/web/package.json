@@ -3,7 +3,7 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "dev": "astro dev",
+        "dev": "astro dev --ignore-lock",
         "build": "astro build",
         "typecheck": "astro check"
     },

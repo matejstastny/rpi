@@ -1,0 +1,14 @@
+# the service only ever listens on loopback; caddy is what the tailnet talks to
+export TASKS_LISTEN=127.0.0.1:8094
+
+# one json document, rewritten atomically on every change
+export TASKS_DIR=/var/lib/tasks
+
+# the week is drawn in this zone no matter where the browser is
+export TASKS_TZ=Europe/Prague
+
+# how often subscribed ics calendars are refetched
+export TASKS_FEED_INTERVAL=30m
+
+output_log=/var/log/tasks/tasks.log
+error_log=/var/log/tasks/tasks.err

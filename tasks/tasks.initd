@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="tasks"
+description="weekly planner with a web ui, tailnet only"
+
+command=/usr/local/bin/tasks
+command_user=tasks:tasks
+respawn_delay=5
+respawn_max=0
+
+depend() {
+	need net localmount
+	after firewall tailscale
+}

@@ -1,0 +1,27 @@
+/* Atkinson Hyperlegible Next, the face the rest of elara's things are set in.
+   Braille Institute, OFL 1.1. three weights, subset to latin and the
+   punctuation the uis actually use, so all three together cost what the one
+   variable Inter file did. */
+@font-face {
+    font-family: "Atkinson";
+    src: url("./fonts/atkinson-400.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Atkinson";
+    src: url("./fonts/atkinson-500.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Atkinson";
+    src: url("./fonts/atkinson-600.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}

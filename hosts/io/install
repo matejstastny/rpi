@@ -32,8 +32,8 @@ enable() {
 
 self="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ]; then
-	echo "  ! no ytdl/share/dash/torrent binary in this payload"
+if [ ! -f "$self/ytdl" ] || [ ! -f "$self/share" ] || [ ! -f "$self/dash" ] || [ ! -f "$self/dash-catalog.json" ] || [ ! -f "$self/torrent" ] || [ ! -f "$self/tasks" ]; then
+	echo "  ! no ytdl/share/dash/torrent/tasks binary in this payload"
 	echo "    they are built on your laptop, so run: mise run deploy io"
 	exit 1
 fi
@@ -157,6 +157,14 @@ install_app dash
 as_root install -d -o root -g root -m 755 /etc/dash
 as_root install -o root -g root -m 644 "$self/dash-catalog.json" /etc/dash/catalog.json
 
+echo "▸ tasks: creating system user"
+system_user tasks
+
+echo "▸ tasks: creating directories"
+as_root install -d -o tasks -g tasks -m 755 /var/lib/tasks /var/log/tasks
+
+install_app tasks
+
 echo "▸ caddy: creating system user"
 system_user caddy
 as_root install -d -o caddy -g caddy -m 700 /var/lib/caddy
@@ -176,7 +184,7 @@ as_root install -o root -g root -m 755 "$self/caddy.initd" /etc/init.d/caddy
 as_root install -o root -g root -m 644 "$self/caddy.confd" /etc/conf.d/caddy
 
 echo "▸ enabling and starting services"
-enable ytdl share dash torrent
+enable ytdl share dash torrent tasks
 enable jellyfin transmission-daemon node-exporter victoria-metrics
 
 # caddy is only started below, once its cloudflare token is known to exist
@@ -199,8 +207,8 @@ else
 	echo "    then: ssh io 'sudo rc-service caddy start'"
 fi
 
-echo "  ! yt.elara.boo, share.elara.boo, jellyfin.elara.boo, torrent.elara.boo"
-echo "    and dash.elara.boo need DNS rewrites in AdGuard Home"
+echo "  ! yt.elara.boo, share.elara.boo, jellyfin.elara.boo, torrent.elara.boo,"
+echo "    dash.elara.boo and tasks.elara.boo need DNS rewrites in AdGuard Home"
 echo "    pointing at io's Tailscale address:"
 echo "      $(tailscale ip -4 2>/dev/null | head -1)"
 echo "  ! jellyfin needs its first-run setup wizard, can't be scripted:"

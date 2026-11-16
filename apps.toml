@@ -59,3 +59,15 @@ domain = "torrent.elara.boo"
 api = 8093
 web = 4324
 needs = "Transmission RPC for live data"
+
+[[app]]
+name = "tasks"
+label = "weekly planner"
+host = "io"
+domain = "tasks.elara.boo"
+api = 8094
+web = 4325
+
+[app.env]
+TASKS_DIR = "/tmp/rpi-tasks"
+TASKS_TZ = "Europe/Prague"

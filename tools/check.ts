@@ -43,8 +43,8 @@ async function webPasses() {
 
     for (const a of apps()) {
         step(`web: ${a.name} typecheck and build`);
-        await run("pnpm", ["exec", "astro", "check"], { cwd: webDir(a), quiet: true });
-        await run("pnpm", ["exec", "astro", "build"], { cwd: webDir(a), quiet: true });
+        await run("pnpm", ["run", "typecheck"], { cwd: webDir(a), quiet: true });
+        await run("pnpm", ["run", "build"], { cwd: webDir(a), quiet: true });
     }
 }
 

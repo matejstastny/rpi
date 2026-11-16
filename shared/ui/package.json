@@ -6,6 +6,7 @@
     "exports": {
         "./maple.css": "./maple.css",
         "./inter.css": "./inter.css",
+        "./atkinson.css": "./atkinson.css",
         "./tokens.css": "./tokens.css",
         "./base.css": "./base.css",
         "./Shell.astro": "./Shell.astro",

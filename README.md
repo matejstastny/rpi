@@ -41,15 +41,19 @@ config and a fleet cli for three raspberry pis, connected over tailscale
 | `transmission-daemon`       | torrent client at `torrent.elara.boo`; `transmission-done` hardlinks finished video into jellyfin's library |
 | `prometheus-node-exporter`  | metrics scrape target for io itself, scraped over loopback                                                  |
 | `victoria-metrics` + `dash` | custom Go + Astro fleet dashboard at `dash.elara.boo`                                                       |
+| `tasks`                     | weekly planner at `tasks.elara.boo`, repeats, carry-over and subscribed ics calendars, tailnet-only         |
 
 ## layout
 
-each app is one directory at the root: a Go api in `server/`, an Astro ui in
-`web/` that the api embeds, and its openrc unit next to them. `apps.toml` is
-the only place that knows an app exists, and everything else reads it.
+each app is one directory at the root: a Go api in `server/`, a ui in `web/`
+that the api embeds, and its openrc unit next to them. the ui is Astro for the
+read-mostly services and React for `tasks`; the tooling runs each app's own
+`dev`, `build` and `typecheck` scripts rather than knowing which. `apps.toml`
+is the only place that knows an app exists, and everything else reads it.
 
 ```
-ytdl/ share/ dash/ torrent/   the apps
+ytdl/ share/ dash/           the apps
+torrent/ tasks/
 apps.toml                    ports, domains, which host runs what
 dns.toml                     every name the fleet resolves
 hosts/<name>/                one pi: host.toml, Caddyfile, install
