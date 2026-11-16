@@ -5,7 +5,7 @@ export TASKS_LISTEN=127.0.0.1:8094
 export TASKS_DIR=/var/lib/tasks
 
 # the week is drawn in this zone no matter where the browser is
-export TASKS_TZ=Europe/Prague
+export TASKS_TZ=America/Los_Angeles
 
 # how often subscribed ics calendars are refetched
 export TASKS_FEED_INTERVAL=30m

@@ -191,3 +191,95 @@ func TestImportTasksIsIdempotentAndHonoursSkips(t *testing.T) {
 		t.Fatalf("carry left it at %+v", st.Items[0])
 	}
 }
+
+const canvasFeed = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:a1@instructure
+SUMMARY:LinkedList [CSS 143 A]
+DTSTART;VALUE=DATE:20261118
+DTEND;VALUE=DATE:20261119
+END:VEVENT
+BEGIN:VEVENT
+UID:a2@instructure
+SUMMARY:12.1 HW - Parametric Equations [STMATH 126 B]
+DTSTART;TZID=Europe/Prague:20261119T235900
+DTEND;TZID=Europe/Prague:20261120T000000
+END:VEVENT
+BEGIN:VEVENT
+UID:a3@instructure
+SUMMARY:Quiz Chapter 4b/5- Lewis Structures [B CHEM 143 A]
+DTSTART;VALUE=DATE:20261120
+END:VEVENT
+BEGIN:VEVENT
+UID:a4@instructure
+SUMMARY:Office hours
+DTSTART;TZID=Europe/Prague:20261117T100000
+END:VEVENT
+END:VCALENDAR
+`
+
+func TestCanvasTitlesSplitIntoCourses(t *testing.T) {
+	cases := map[string][2]string{
+		"LinkedList [CSS 143 A]":                  {"LinkedList", "CSS 143 A"},
+		"Quiz Chapter 4b/5- Lewis [B CHEM 143 A]": {"Quiz Chapter 4b/5- Lewis", "B CHEM 143 A"},
+		"12.1 HW - Parametric [STMATH 126 B]":     {"12.1 HW - Parametric", "STMATH 126 B"},
+		"Office hours":                            {"Office hours", ""},
+		"[CSS 143 A]":                             {"[CSS 143 A]", ""},
+		"Reading [chapter 3] [CSS 143 A]":         {"Reading [chapter 3]", "CSS 143 A"},
+	}
+	for title, want := range cases {
+		name, code := splitCourse(title)
+		if name != want[0] || code != want[1] {
+			t.Fatalf("%q split to %q / %q, want %q / %q", title, name, code, want[0], want[1])
+		}
+	}
+}
+
+func TestCanvasFeedLearnsAndHidesCourses(t *testing.T) {
+	zone, _ := time.LoadLocation("Europe/Prague")
+	entries := parse(t, canvasFeed)
+
+	feed := &Feed{ID: "f1", Name: "canvas", Color: "#89b4fa", Kind: feedCanvas}
+	if !feed.learn(courses(entries)) {
+		t.Fatal("a canvas feed should discover its courses")
+	}
+	if len(feed.Classes) != 3 {
+		t.Fatalf("want three courses, got %+v", feed.Classes)
+	}
+	// discovering the same feed again adds nothing
+	if feed.learn(courses(entries)) {
+		t.Fatal("courses should only be learned once")
+	}
+	for n, c := range feed.Classes {
+		if c.Color != classColors[n%len(classColors)] {
+			t.Fatalf("course %s got colour %s", c.Code, c.Color)
+		}
+	}
+
+	from := time.Date(2026, 11, 16, 0, 0, 0, 0, zone)
+	tasks := plan(entries, from, from.AddDate(0, 0, 6), feed)
+	if len(tasks) != 4 {
+		t.Fatalf("want every entry as work, got %d", len(tasks))
+	}
+	for _, task := range tasks {
+		if strings.Contains(task.title, "[") {
+			t.Fatalf("the course should be taken out of the title: %q", task.title)
+		}
+		if task.uid == "a1@instructure" && task.class != "CSS 143 A" {
+			t.Fatalf("want the course kept beside the title, got %q", task.class)
+		}
+	}
+
+	// switching one off keeps its assignments out of the week entirely
+	feed.class("CSS 143 A").Hidden = true
+	tasks = plan(entries, from, from.AddDate(0, 0, 6), feed)
+	if len(tasks) != 3 {
+		t.Fatalf("a hidden course should bring nothing in, got %d", len(tasks))
+	}
+	for _, task := range tasks {
+		if task.class == "CSS 143 A" {
+			t.Fatalf("a hidden course leaked in: %+v", task)
+		}
+	}
+}

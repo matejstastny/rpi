@@ -122,10 +122,11 @@ func (s *server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 type feedInput struct {
-	Name  string `json:"name"`
-	URL   string `json:"url"`
-	Color string `json:"color"`
-	Kind  string `json:"kind"`
+	Name    string  `json:"name"`
+	URL     string  `json:"url"`
+	Color   string  `json:"color"`
+	Kind    string  `json:"kind"`
+	Classes []Class `json:"classes"`
 }
 
 func (in feedInput) clean() (name, color, kind string) {
@@ -183,8 +184,8 @@ func (s *server) handleAddFeed(w http.ResponseWriter, r *http.Request) {
 	s.answer(w, r)
 }
 
-// handleEditFeed renames, recolours, or flips a calendar between being
-// context and being work. Demoting it back to events takes its untouched
+// handleEditFeed renames, recolours, switches a course off, or flips a
+// calendar between being context and being work. Demoting it back to events takes its untouched
 // future with it, the same as unsubscribing would: saying it is not work any
 // more and leaving the work on the board would only draw everything twice.
 // What was already done or written off stays as the record of what happened.
@@ -205,14 +206,48 @@ func (s *server) handleEditFeed(w http.ResponseWriter, r *http.Request) {
 		if feed == nil {
 			return errNotFound
 		}
-		demoted := feed.Kind == feedTasks && kind == feedEvents
+		demoted := works(feed.Kind) && !works(kind)
 		feed.Name, feed.Color, feed.Kind = name, color, kind
+
+		// courses are merged by code rather than replaced, so a sync that
+		// discovers a new one while this dialog is open does not lose it
+		hidden := map[string]bool{}
+		for _, in := range in.Classes {
+			got := feed.class(in.Code)
+			if got == nil {
+				continue
+			}
+			if hexColor.MatchString(in.Color) {
+				got.Color = strings.ToLower(in.Color)
+			}
+			if in.Hidden && !got.Hidden {
+				hidden[got.Code] = true
+			}
+			got.Hidden = in.Hidden
+		}
+		// a calendar switched to canvas after the fact still has items
+		// carrying the course in their title, so take it out now rather than
+		// waiting for each one to be reissued
+		if feed.Kind == feedCanvas {
+			var codes []string
+			for _, item := range st.Items {
+				if item.Feed != id || item.Class != "" {
+					continue
+				}
+				if name, code := splitCourse(item.Title); code != "" {
+					item.Title, item.Class = name, code
+					codes = append(codes, code)
+				}
+			}
+			feed.learn(codes)
+		}
 		edited = *feed
 
-		if demoted {
+		if demoted || len(hidden) > 0 {
 			items := st.Items[:0]
 			for _, item := range st.Items {
-				if item.Feed == id && item.open() && item.Date >= cut {
+				gone := demoted || hidden[item.Class]
+				if item.Feed == id && gone && item.open() && item.Date >= cut {
 					continue
 				}
 				items = append(items, item)

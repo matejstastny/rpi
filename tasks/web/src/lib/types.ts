@@ -2,8 +2,16 @@ export type Status = "open" | "done" | "dropped";
 
 export type Freq = "weekly" | "monthly" | "yearly";
 
-/** a calendar is either context beside the day, or the work itself */
-export type FeedKind = "events" | "tasks";
+/** a calendar is context beside the day, the work itself, or canvas, which is
+ *  always work and always several courses at once */
+export type FeedKind = "events" | "tasks" | "canvas";
+
+/** one course inside a canvas feed */
+export type Class = {
+    code: string;
+    color: string;
+    hidden: boolean;
+};
 
 /** a task waits for you and carries forward; an event happens or it doesn't */
 export type Kind = "task" | "event";
@@ -29,6 +37,7 @@ export type Item = {
     series?: string;
     feed?: string;
     source?: string;
+    class?: string;
     occurs?: string;
     made: string;
 };
@@ -54,6 +63,7 @@ export type Feed = {
     url: string;
     color: string;
     kind: FeedKind;
+    classes?: Class[];
     made: string;
     synced?: string;
     error?: string;

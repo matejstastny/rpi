@@ -70,4 +70,4 @@ web = 4325
 
 [app.env]
 TASKS_DIR = "/tmp/rpi-tasks"
-TASKS_TZ = "Europe/Prague"
+TASKS_TZ = "America/Los_Angeles"

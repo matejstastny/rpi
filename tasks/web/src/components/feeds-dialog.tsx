@@ -1,7 +1,17 @@
-import { AlertTriangle, CalendarDays, ListChecks, Plus, RefreshCw, Trash2 } from "lucide-react";
+import {
+    AlertTriangle,
+    CalendarDays,
+    Eye,
+    EyeOff,
+    GraduationCap,
+    ListChecks,
+    Plus,
+    RefreshCw,
+    Trash2
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-import type { Feed, FeedKind } from "@/lib/types";
+import type { Class, Feed, FeedKind } from "@/lib/types";
 import { Button, Field, Modal, fieldClass } from "./ui";
 
 const swatches = ["#89b4fa", "#94e2d5", "#a6e3a1", "#f9e2af", "#fab387", "#f38ba8", "#cba6f7"];
@@ -18,6 +28,12 @@ const kinds: { value: FeedKind; label: string; icon: typeof CalendarDays; hint: 
         label: "tasks",
         icon: ListChecks,
         hint: "every entry becomes a real item: completable, and carried forward if you miss it"
+    },
+    {
+        value: "canvas",
+        label: "canvas",
+        icon: GraduationCap,
+        hint: "always work, split by course: each one gets its own colour and can be switched off"
     }
 ];
 
@@ -44,7 +60,10 @@ export function FeedsDialog({
     onClose: () => void;
     feeds: Feed[];
     onAdd: (body: Pick<Feed, "name" | "url" | "color" | "kind">) => Promise<void>;
-    onEdit: (id: string, body: Pick<Feed, "name" | "color" | "kind">) => Promise<void>;
+    onEdit: (
+        id: string,
+        body: Pick<Feed, "name" | "color" | "kind"> & { classes?: Class[] }
+    ) => Promise<void>;
     onSync: (id: string) => Promise<void>;
     onRemove: (id: string) => Promise<void>;
 }) {
@@ -148,6 +167,70 @@ export function FeedsDialog({
                             >
                                 <Trash2 className="size-3.5" />
                             </Button>
+
+                            {feed.kind === "canvas" && (
+                                <ul className="flex w-full flex-wrap gap-1.5 border-t border-line/60 pt-2">
+                                    {(feed.classes ?? []).map((course) => (
+                                        <li
+                                            key={course.code}
+                                            className={cn(
+                                                "flex items-center gap-1.5 rounded-lg border border-line/70 bg-base/50 py-1 pr-1 pl-2",
+                                                course.hidden && "opacity-45"
+                                            )}
+                                        >
+                                            <input
+                                                type="color"
+                                                value={course.color}
+                                                onChange={(e) =>
+                                                    void onEdit(feed.id, {
+                                                        name: feed.name,
+                                                        color: feed.color,
+                                                        kind: feed.kind,
+                                                        classes: [
+                                                            { ...course, color: e.target.value }
+                                                        ]
+                                                    })
+                                                }
+                                                className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                                                title={`recolour ${course.code}`}
+                                            />
+                                            <span className="font-mono text-[0.68rem] text-soft">
+                                                {course.code}
+                                            </span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                title={
+                                                    course.hidden
+                                                        ? "show this course"
+                                                        : "hide it, and drop what it has not done yet"
+                                                }
+                                                onClick={() =>
+                                                    void onEdit(feed.id, {
+                                                        name: feed.name,
+                                                        color: feed.color,
+                                                        kind: feed.kind,
+                                                        classes: [
+                                                            { ...course, hidden: !course.hidden }
+                                                        ]
+                                                    })
+                                                }
+                                            >
+                                                {course.hidden ? (
+                                                    <EyeOff className="size-3" />
+                                                ) : (
+                                                    <Eye className="size-3" />
+                                                )}
+                                            </Button>
+                                        </li>
+                                    ))}
+                                    {(feed.classes ?? []).length === 0 && (
+                                        <li className="text-[0.68rem] text-muted">
+                                            no courses found in this feed yet
+                                        </li>
+                                    )}
+                                </ul>
+                            )}
                         </li>
                     ))}
                     {feeds.length === 0 && (

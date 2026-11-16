@@ -127,6 +127,7 @@ func importTasks(st *state, tasks []due) {
 			Status: statusOpen,
 			Feed:   task.feed,
 			Source: task.uid,
+			Class:  task.class,
 			Occurs: task.date,
 			Made:   now(),
 		})

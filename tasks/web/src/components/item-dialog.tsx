@@ -21,6 +21,7 @@ export function ItemDialog({
     date,
     item,
     series,
+    lastUntil,
     onSubmit,
     onDelete
 }: {
@@ -30,6 +31,9 @@ export function ItemDialog({
     date: string;
     item?: Item | null;
     series?: Series | null;
+    /** the end date of the repeat made most recently, which for a term or a
+     *  semester is almost always the one wanted again */
+    lastUntil?: string;
     onSubmit: (draft: ItemDraft, scope: Scope) => Promise<void>;
     onDelete: (scope: Scope) => Promise<void>;
 }) {
@@ -64,8 +68,8 @@ export function ItemDialog({
         setKind(item?.kind ?? "task");
         setFreq(series?.freq ?? "none");
         setWeekdays(series?.weekdays ?? [fromISO(item?.date ?? date).getDay()]);
-        setUntil(series?.until ?? shift(item?.date ?? date, 90));
-    }, [open, date, item, series]);
+        setUntil(series?.until ?? lastUntil ?? shift(item?.date ?? date, 90));
+    }, [open, date, item, series, lastUntil]);
 
     const pick = (next: Scope) => {
         setScope(next);

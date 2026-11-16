@@ -36,7 +36,8 @@ export function ItemCard({
     const done = item.status === "done";
     const dropped = item.status === "dropped";
     const isEvent = item.kind === "event";
-    const color = category?.color ?? feed?.color ?? "var(--color-muted)";
+    const course = item.class ? feed?.classes?.find((c) => c.code === item.class) : undefined;
+    const color = course?.color ?? category?.color ?? feed?.color ?? "var(--color-muted)";
 
     return (
         <article
@@ -115,13 +116,17 @@ export function ItemCard({
                         <span
                             className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium"
                             style={{
-                                color: feed.color,
-                                background: `color-mix(in oklab, ${feed.color} 14%, transparent)`
+                                color: course?.color ?? feed.color,
+                                background: `color-mix(in oklab, ${course?.color ?? feed.color} 14%, transparent)`
                             }}
-                            title={`imported from ${feed.name}`}
+                            title={
+                                course
+                                    ? `${course.code}, imported from ${feed.name}`
+                                    : `imported from ${feed.name}`
+                            }
                         >
                             <CalendarDays className="size-3" />
-                            {feed.name}
+                            {course?.code ?? feed.name}
                         </span>
                     )}
                     {item.series && (

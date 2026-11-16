@@ -20,6 +20,10 @@ type state struct {
 	Items      []*Item     `json:"items"`
 	Series     []*Series   `json:"series"`
 	Feeds      []*Feed     `json:"feeds"`
+	// the zone the planner was last written in. a subscribed calendar is
+	// published in absolute time, so which day a 23:59 deadline falls on
+	// depends on it.
+	Zone string `json:"zone,omitempty"`
 }
 
 type store struct {
@@ -47,6 +51,7 @@ func newStore(cfg config) (*store, error) {
 	raw, err := os.ReadFile(s.path)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
+		s.st.Zone = cfg.zone.String()
 		for _, c := range seedCategories {
 			s.st.Categories = append(s.st.Categories, &Category{ID: ids.New(6), Name: c.Name, Color: c.Color})
 		}
@@ -61,6 +66,13 @@ func newStore(cfg config) (*store, error) {
 			return nil, err
 		}
 		s.settle()
+		if dropped := s.rezone(cfg.zone); dropped > 0 {
+			log.Printf("timezone is now %s: dropped %d imported items to be refetched on the right day",
+				cfg.zone, dropped)
+			if err := s.save(); err != nil {
+				return nil, err
+			}
+		}
 		log.Printf("loaded %d items, %d repeats and %d calendars from %s",
 			len(s.st.Items), len(s.st.Series), len(s.st.Feeds), s.path)
 	}
@@ -85,6 +97,31 @@ func (s *store) settle() {
 			series.Kind = kindTask
 		}
 	}
+}
+
+// rezone throws away the unfinished imports of a calendar when the planner's
+// own timezone changes under them. An assignment due at 23:59 lands on a
+// different day in a different zone, and the import would otherwise keep the
+// old copy and add the corrected one beside it. What is already done or
+// written off stays: it happened, whatever day it is filed under.
+func (s *store) rezone(zone *time.Location) int {
+	if s.st.Zone == zone.String() {
+		return 0
+	}
+	s.st.Zone = zone.String()
+
+	cut := stamp(today(zone))
+	dropped := 0
+	kept := s.st.Items[:0]
+	for _, i := range s.st.Items {
+		if i.Feed != "" && i.open() && i.Date >= cut {
+			dropped++
+			continue
+		}
+		kept = append(kept, i)
+	}
+	s.st.Items = kept
+	return dropped
 }
 
 // save writes through a temporary file so a power cut on a pi can only ever

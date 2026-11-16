@@ -1,4 +1,4 @@
-import type { Category, Feed, ItemDraft, Status, Week } from "./types";
+import type { Category, Class, Feed, ItemDraft, Status, Week } from "./types";
 
 /** every call answers with the whole week the ui is looking at, so there is
  *  one source of truth and nothing to merge by hand on this side */
@@ -43,8 +43,11 @@ export const api = {
 
     addFeed: (week: string, body: Pick<Feed, "name" | "url" | "color" | "kind">) =>
         send("/api/feeds", week, "POST", body),
-    editFeed: (week: string, id: string, body: Pick<Feed, "name" | "color" | "kind">) =>
-        send(`/api/feeds/${id}`, week, "PATCH", body),
+    editFeed: (
+        week: string,
+        id: string,
+        body: Pick<Feed, "name" | "color" | "kind"> & { classes?: Class[] }
+    ) => send(`/api/feeds/${id}`, week, "PATCH", body),
     removeFeed: (week: string, id: string) => send(`/api/feeds/${id}`, week, "DELETE"),
     syncFeed: (week: string, id: string) => send(`/api/feeds/${id}/sync`, week, "POST")
 };

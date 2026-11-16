@@ -57,6 +57,8 @@ type Item struct {
 	// event's own uid, so the same occurrence is never imported twice
 	Feed   string `json:"feed,omitempty"`
 	Source string `json:"source,omitempty"`
+	// the course an imported assignment belongs to, for feeds that have them
+	Class  string `json:"class,omitempty"`
 	Occurs string `json:"occurs,omitempty"`
 	// what "keep it on this day" was called before an item knew whether it
 	// was work or an appointment; read once on load and then dropped
@@ -102,6 +104,9 @@ type Feed struct {
 	URL   string `json:"url"`
 	Color string `json:"color"`
 	Kind  string `json:"kind"`
+	// the courses found inside a canvas feed, each shown in its own colour
+	// and hidden on its own
+	Classes []*Class `json:"classes,omitempty"`
 	// occurrences deleted one at a time, as "uid@date", which the next import
 	// must not bring back
 	Skips []string `json:"skips,omitempty"`
@@ -111,6 +116,52 @@ type Feed struct {
 	Synced string `json:"synced,omitempty"`
 	Error  string `json:"error,omitempty"`
 	Events int    `json:"events"`
+}
+
+// Class is one course inside a canvas feed, as the feed itself names it.
+type Class struct {
+	Code   string `json:"code"`
+	Color  string `json:"color"`
+	Hidden bool   `json:"hidden"`
+}
+
+// the colours new courses are handed as they are discovered, in order, so a
+// freshly subscribed canvas feed is already readable before anyone picks
+// anything
+var classColors = []string{
+	"#cba6f7", "#89b4fa", "#a6e3a1", "#f9e2af",
+	"#fab387", "#f38ba8", "#94e2d5", "#f5c2e7",
+}
+
+func (f *Feed) class(code string) *Class {
+	for _, c := range f.Classes {
+		if c.Code == code {
+			return c
+		}
+	}
+	return nil
+}
+
+func (f *Feed) hides(code string) bool {
+	c := f.class(code)
+	return c != nil && c.Hidden
+}
+
+// learn records any course this feed has not been seen carrying before, and
+// reports whether it found one
+func (f *Feed) learn(codes []string) bool {
+	found := false
+	for _, code := range codes {
+		if code == "" || f.class(code) != nil {
+			continue
+		}
+		f.Classes = append(f.Classes, &Class{
+			Code:  code,
+			Color: classColors[len(f.Classes)%len(classColors)],
+		})
+		found = true
+	}
+	return found
 }
 
 // Event is one occurrence from a feed, already expanded out of its rrule.
@@ -155,9 +206,18 @@ func validStatus(s string) bool {
 const (
 	feedEvents = "events"
 	feedTasks  = "tasks"
+	// canvas posts one calendar entry per assignment, titled
+	// "<assignment> [<course code>]". it is always work, and it is always
+	// several courses in one feed, so it is read apart from a plain calendar.
+	feedCanvas = "canvas"
 )
 
-func validKind(k string) bool { return k == feedEvents || k == feedTasks }
+func validKind(k string) bool {
+	return k == feedEvents || k == feedTasks || k == feedCanvas
+}
+
+// works reports whether a subscription produces items rather than context
+func works(kind string) bool { return kind == feedTasks || kind == feedCanvas }
 
 var errNoTitle = errors.New("that needs a title")
 

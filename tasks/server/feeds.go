@@ -102,7 +102,8 @@ func (f *feeds) refresh(ctx context.Context, id string) error {
 	}
 	f.mu.Unlock()
 
-	return f.store.write(func(st *state) error {
+	var learned bool
+	writeErr := f.store.write(func(st *state) error {
 		got := st.feed(id)
 		if got == nil {
 			return errNotFound
@@ -114,8 +115,19 @@ func (f *feeds) refresh(ctx context.Context, id string) error {
 		}
 		got.Error = ""
 		got.Events = len(entries)
+		if got.Kind == feedCanvas {
+			learned = got.learn(courses(entries))
+			feed = *got
+		}
 		return nil
 	})
+
+	// a course discovered during this sync has to reach the cached copy too,
+	// or its colour and its switch would not exist until the next refetch
+	if learned {
+		f.restate(feed)
+	}
+	return writeErr
 }
 
 func (f *feeds) fetch(ctx context.Context, raw string) ([]*entry, error) {
@@ -163,7 +175,7 @@ func (f *feeds) between(from, to time.Time) map[string][]Event {
 
 	out := map[string][]Event{}
 	for _, cal := range f.cache {
-		if cal.feed.Kind == feedTasks {
+		if works(cal.feed.Kind) {
 			continue
 		}
 		for date, events := range expand(cal.entries, from, to, &cal.feed) {
@@ -176,18 +188,31 @@ func (f *feeds) between(from, to time.Time) map[string][]Event {
 	return out
 }
 
-// due lists every occurrence of the subscriptions read as tasks, for the
-// week to turn into real items
+// due lists every occurrence of the subscriptions read as work, for the week
+// to turn into real items
 func (f *feeds) due(from, to time.Time) []due {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
 	var out []due
 	for _, cal := range f.cache {
-		if cal.feed.Kind != feedTasks {
+		if !works(cal.feed.Kind) {
 			continue
 		}
 		out = append(out, plan(cal.entries, from, to, &cal.feed)...)
+	}
+	return out
+}
+
+// courses lists every course code a canvas feed's entries mention
+func courses(entries []*entry) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, e := range entries {
+		if _, code := splitCourse(e.title); code != "" && !seen[code] {
+			seen[code] = true
+			out = append(out, code)
+		}
 	}
 	return out
 }

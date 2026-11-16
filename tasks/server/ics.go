@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -305,10 +306,28 @@ type due struct {
 	uid    string
 	title  string
 	where  string
+	class  string
 	date   string
 	start  string
 	end    string
 	allDay bool
+}
+
+// canvas titles every assignment "<assignment> [<course code>]". the course
+// is worth keeping and worth taking out of the title, since a column of
+// twenty assignments all ending in the same bracket says nothing.
+var course = regexp.MustCompile(`^(.*?)\s*\[([^\[\]]+)\]\s*$`)
+
+func splitCourse(title string) (string, string) {
+	m := course.FindStringSubmatch(title)
+	if m == nil {
+		return title, ""
+	}
+	name := strings.TrimSpace(m[1])
+	if name == "" {
+		return title, ""
+	}
+	return name, strings.TrimSpace(m[2])
 }
 
 // plan reads the same calendar as work to be done: one task per occurrence on
@@ -319,7 +338,23 @@ func plan(entries []*entry, from, to time.Time, feed *Feed) []due {
 		if d.Before(from) || d.After(to) {
 			return
 		}
-		task := due{feed: feed.ID, uid: e.uid, title: e.title, where: e.where, date: stamp(d), allDay: e.allDay}
+		title, class := e.title, ""
+		if feed.Kind == feedCanvas {
+			title, class = splitCourse(e.title)
+			if feed.hides(class) {
+				return
+			}
+		}
+
+		task := due{
+			feed:   feed.ID,
+			uid:    e.uid,
+			title:  title,
+			where:  e.where,
+			class:  class,
+			date:   stamp(d),
+			allDay: e.allDay,
+		}
 		if !e.allDay {
 			task.start = e.start.Format("15:04")
 			if e.span > 0 && e.span < 24*time.Hour {

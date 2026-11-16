@@ -254,6 +254,12 @@ export function App() {
                 date={form?.date ?? start}
                 item={form?.item}
                 series={week?.series.find((s) => s.id === form?.item?.series)}
+                lastUntil={
+                    week?.series.length
+                        ? [...week.series].sort((a, b) => a.made.localeCompare(b.made)).at(-1)
+                              ?.until
+                        : undefined
+                }
                 onSubmit={submit}
                 onDelete={remove}
             />
