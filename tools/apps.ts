@@ -21,10 +21,6 @@ function main() {
             );
         }
     }
-
-    console.log(`\n${muted("mise run dev <app>")}    one app locally`);
-    console.log(`${muted("mise run build <app>")}  cross-compile for the pis`);
-    console.log(`${muted("mise run deploy <host>")} build, push and install`);
 }
 
 try {

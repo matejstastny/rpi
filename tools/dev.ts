@@ -7,8 +7,6 @@ import { apiURL, app, apps, root, serverDir, webDir, webURL, type App } from "./
 import { start, run } from "./run.ts";
 import { bold, cyan, die, green, muted, yellow } from "./term.ts";
 
-/** free reports whether a port can be bound, so a leftover `go run` from an
- *  earlier session is named rather than surfacing as a bind error later. */
 function free(port: number): Promise<boolean> {
     return new Promise((resolve) => {
         const probe = createServer();
@@ -32,7 +30,11 @@ async function preflight(a: App): Promise<void> {
 
 async function choose(): Promise<App> {
     const all = apps();
-    if (!stdin.isTTY) throw new Error(`name an app: mise run dev ${all[0].name}`);
+    if (!stdin.isTTY) {
+        const first = all[0];
+        if (!first) throw new Error("apps.toml has no apps");
+        throw new Error(`name an app: mise run dev ${first.name}`);
+    }
 
     console.log(`\n${bold("which app?")}`);
     all.forEach((a, i) =>

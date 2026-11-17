@@ -3,8 +3,10 @@
     "private": true,
     "type": "module",
     "devDependencies": {
+        "@types/node": "catalog:",
         "prettier": "catalog:",
         "prettier-plugin-astro": "catalog:",
-        "smol-toml": "^1.9.1"
+        "smol-toml": "^1.9.1",
+        "typescript": "catalog:"
     }
 }

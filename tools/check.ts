@@ -35,6 +35,12 @@ async function webPasses() {
     step("web: install");
     await run("pnpm", ["install", "--frozen-lockfile", "--silent"], { cwd: root });
 
+    step("tools: typecheck");
+    await run("pnpm", ["exec", "tsc", "--noEmit", "--project", "tsconfig.json"], {
+        cwd: root,
+        quiet: true
+    });
+
     step("web: format");
     await run("pnpm", ["exec", "prettier", fix ? "--write" : "--check", "."], {
         cwd: root,
@@ -44,6 +50,16 @@ async function webPasses() {
     for (const a of apps()) {
         step(`web: ${a.name} typecheck and build`);
         await run("pnpm", ["run", "typecheck"], { cwd: webDir(a), quiet: true });
+        await run("pnpm", ["run", "build"], { cwd: webDir(a), quiet: true });
+    }
+}
+
+async function webBuilds() {
+    step("web: install");
+    await run("pnpm", ["install", "--frozen-lockfile", "--silent"], { cwd: root });
+
+    for (const a of apps()) {
+        step(`web: ${a.name} build`);
         await run("pnpm", ["run", "build"], { cwd: webDir(a), quiet: true });
     }
 }
@@ -74,7 +90,9 @@ const stages = { go, web: webPasses, shell, python };
 
 async function main() {
     const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-    const names = only.length ? only : Object.keys(stages);
+    const names = only.length ? only : ["web", "go", "shell", "python"];
+
+    if (names.includes("go") && !names.includes("web")) await webBuilds();
 
     for (const name of names) {
         const stage = stages[name as keyof typeof stages];
