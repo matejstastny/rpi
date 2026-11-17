@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { ended, type Now } from "@/lib/clock";
 import { cn } from "@/lib/cn";
 import { dayName, dayNumber, monthName } from "@/lib/dates";
 import type { Category, Day, Feed, Item } from "@/lib/types";
@@ -11,6 +12,7 @@ export function DayColumn({
     day,
     categories,
     feeds,
+    now,
     dragging,
     onAdd,
     onMove,
@@ -24,6 +26,7 @@ export function DayColumn({
     day: Day;
     categories: Category[];
     feeds: Feed[];
+    now: Now;
     dragging: string | null;
     onAdd: (date: string) => void;
     onMove: (id: string, date: string) => void;
@@ -111,7 +114,11 @@ export function DayColumn({
 
             <div className="flex flex-1 flex-col gap-1.5 p-2">
                 {day.events.map((event, n) => (
-                    <EventChip key={`${event.feed}-${event.title}-${n}`} event={event} />
+                    <EventChip
+                        key={`${event.feed}-${event.title}-${n}`}
+                        event={event}
+                        over={ended(now, day, event.start, event.end)}
+                    />
                 ))}
 
                 {day.items.map((item) => (
@@ -120,6 +127,7 @@ export function DayColumn({
                         item={item}
                         category={item.category ? byID.get(item.category) : undefined}
                         feed={item.feed ? byFeed.get(item.feed) : undefined}
+                        over={ended(now, day, item.start, item.end)}
                         onComplete={(rect) => onComplete(item, rect)}
                         onDrop={() => onDrop(item)}
                         onReopen={() => onReopen(item)}

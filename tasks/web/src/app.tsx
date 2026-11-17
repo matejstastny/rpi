@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster, toast } from "sonner";
 import { api } from "@/lib/api";
 import { cheer, ovation } from "@/lib/celebrate";
+import { useNow } from "@/lib/clock";
 import { dayNameLong, fromISO, mondayOf, shift } from "@/lib/dates";
 import type { Category, Feed, Item, ItemDraft, Status, Week } from "@/lib/types";
 import { CategoriesDialog } from "./components/categories-dialog";
@@ -23,6 +24,7 @@ export function App() {
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [feedsOpen, setFeedsOpen] = useState(false);
     const announced = useRef("");
+    const now = useNow();
 
     useEffect(() => {
         let live = true;
@@ -38,8 +40,6 @@ export function App() {
         };
     }, [start]);
 
-    // the sweep happens server side, so the ui owns up to it once per load
-    // rather than letting the week quietly rearrange itself
     useEffect(() => {
         if (!week || week.stats.carried === 0) return;
         const key = `${week.today}-${week.stats.carried}`;
@@ -84,8 +84,6 @@ export function App() {
             cheer(rect);
             const next = await setStatus(item, "done");
 
-            // finishing the last open thing on a day, or in the week, is
-            // worth more than finishing any one item
             const day = next.days.find((d) => d.items.some((i) => i.id === item.id));
             const tasks = day?.items.filter((i) => i.kind !== "event") ?? [];
             if (next.stats.total > 2 && next.stats.open === 0) {
@@ -231,6 +229,7 @@ export function App() {
                                     day={day}
                                     categories={week.categories}
                                     feeds={week.feeds}
+                                    now={now}
                                     dragging={dragging}
                                     onAdd={(date) => setForm({ date })}
                                     onMove={(id, date) => void move(id, date)}

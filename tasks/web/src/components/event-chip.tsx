@@ -1,22 +1,39 @@
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, Check, MapPin } from "lucide-react";
+import { cn } from "@/lib/cn";
 import type { CalendarEvent } from "@/lib/types";
 
 /** an imported event: something happening to you rather than something you
- *  chose, so it is shown but never completed */
-export function EventChip({ event }: { event: CalendarEvent }) {
+ *  chose, so it is never completed by hand. Once it is over the day crosses
+ *  it off for you, the same as a finished task. */
+export function EventChip({ event, over }: { event: CalendarEvent; over: boolean }) {
     return (
         <div
-            className="animate-rise group/event relative overflow-hidden rounded-xl border border-line/70 bg-surface/60 px-2.5 py-1.5 pl-3"
+            className={cn(
+                "animate-rise group/event relative overflow-hidden rounded-xl border px-2.5 py-1.5 pl-3",
+                over ? "border-green/20 bg-green/5" : "border-line/70 bg-surface/60"
+            )}
             title={`${event.title} — ${event.name}`}
         >
             <span
                 aria-hidden
-                className="absolute inset-y-1.5 left-0 w-[3px] rounded-full opacity-70"
-                style={{ background: event.color }}
+                className={cn(
+                    "absolute inset-y-1.5 left-0 w-[3px] rounded-full",
+                    over ? "opacity-40" : "opacity-70"
+                )}
+                style={{ background: over ? "var(--color-green)" : event.color }}
             />
             <div className="flex items-baseline gap-1.5">
-                <CalendarDays className="size-3 shrink-0 translate-y-0.5 text-muted" />
-                <span className="min-w-0 flex-1 truncate text-[0.76rem] text-soft">
+                {over ? (
+                    <Check className="size-3 shrink-0 translate-y-0.5 text-green/70" />
+                ) : (
+                    <CalendarDays className="size-3 shrink-0 translate-y-0.5 text-muted" />
+                )}
+                <span
+                    className={cn(
+                        "min-w-0 flex-1 truncate text-[0.76rem]",
+                        over ? "text-dim line-through decoration-green/50" : "text-soft"
+                    )}
+                >
                     {event.title}
                 </span>
             </div>
