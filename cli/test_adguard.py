@@ -13,6 +13,7 @@ import json
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from unittest.mock import patch
 
 from . import adguard
 
@@ -82,6 +83,10 @@ class ReconcileTest(unittest.TestCase):
         FakeAdGuard.upstream = []
         FakeAdGuard.bootstrap = []
         FakeAdGuard.calls = []
+        addresses = {"thebe": "100.64.0.10", "io": "100.64.0.11"}
+        self.address_of = patch.object(adguard, "address_of", side_effect=addresses.__getitem__)
+        self.address_of.start()
+        self.addCleanup(self.address_of.stop)
         self.client = adguard.Client(host="127.0.0.1", user="elara", password="x", port=self.port)
         self.want = adguard.desired()
 
