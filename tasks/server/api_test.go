@@ -47,13 +47,13 @@ func titlesOf(week weekView) []string {
 	return out
 }
 
-// editing a repeat from one of its later occurrences used to move the whole
-// series' start to that date, which deleted every occurrence between today
-// and the one being edited
-func TestEditingASeriesKeepsTheOccurrencesBeforeIt(t *testing.T) {
+// editing a repeat must keep its past occurrences, including when today is
+// later than the monday used to load the week
+func TestEditingASeriesKeepsPastOccurrences(t *testing.T) {
 	s, h := newServer(t)
 	start := monday(today(s.cfg.zone))
 	week := stamp(start)
+	cut := stamp(today(s.cfg.zone))
 	until := stamp(start.AddDate(0, 0, 20))
 
 	call(t, h, "POST", "/api/items?week="+week, `{
@@ -80,9 +80,17 @@ func TestEditingASeriesKeepsTheOccurrencesBeforeIt(t *testing.T) {
 	if len(got) != 7 {
 		t.Fatalf("the week should still be full after the edit, got %v", got)
 	}
-	for _, title := range got {
-		if !strings.HasSuffix(title, "gym and sauna") {
-			t.Fatalf("every occurrence should carry the edit, got %v", got)
+	for _, occurrence := range got {
+		date, title, ok := strings.Cut(occurrence, " ")
+		if !ok {
+			t.Fatalf("malformed occurrence %q", occurrence)
+		}
+		want := "gym and sauna"
+		if date < cut {
+			want = "gym"
+		}
+		if title != want {
+			t.Fatalf("%s: want %q, got %q", date, want, title)
 		}
 	}
 	if after.Series[0].From != before.Series[0].From {
